@@ -6,6 +6,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
+import { useAppContext } from '../context/AppContext';
 import { formatCurrency, formatDate, calcTotals, groupByMonth } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';
@@ -14,6 +15,10 @@ import TopBar from '../components/TopBar';
 export default function Overview() {
   const { transactions, loading } = useTransactions();
   const { categories } = useCategories();
+  const { displayCurrency, convertAmount } = useAppContext();
+
+  // Helper: format in display currency
+  const fmt = (amount) => formatCurrency(amount, displayCurrency);
 
   const totals = useMemo(() => calcTotals(transactions), [transactions]);
 
@@ -21,10 +26,11 @@ export default function Overview() {
   const bankBalance = useMemo(() => {
     const withBalance = transactions.filter((t) => t.bankBalance != null);
     if (withBalance.length > 0) {
-      return withBalance.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0].bankBalance;
+      const latest = withBalance.sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+      return convertAmount(latest.bankBalance, latest.currency || 'RON');
     }
-    return totals.income - totals.expenses;
-  }, [transactions, totals]);
+    return convertAmount(totals.income - totals.expenses, 'RON');
+  }, [transactions, totals, convertAmount]);
 
   // Current month transactions for budget section
   const currentMonthKey = new Date().toISOString().slice(0, 7);
@@ -33,15 +39,15 @@ export default function Overview() {
     [transactions, currentMonthKey],
   );
 
-  // Spending per category this month
+  // Spending per category this month (converted)
   const categorySpend = useMemo(() => {
     const map = {};
     currentMonthTxs.filter((t) => t.type === 'expense').forEach((tx) => {
       const cat = tx.category || 'other';
-      map[cat] = (map[cat] || 0) + (tx.amount || 0);
+      map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, tx.currency || 'RON');
     });
     return map;
-  }, [currentMonthTxs]);
+  }, [currentMonthTxs, convertAmount]);
 
   // Top 4 expense categories this month for budget cards
   const budgetCategories = useMemo(() => {
@@ -54,29 +60,31 @@ export default function Overview() {
       });
   }, [categorySpend, categories]);
 
-  // Monthly bar chart (last 6 months)
+  // Monthly bar chart (last 6 months) — converted
   const barData = useMemo(() => {
     const groups = groupByMonth(transactions);
     return Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-6)
       .map(([month, txs]) => {
-        const t = calcTotals(txs);
+        const income  = txs.filter((t) => t.type === 'income').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+        const expenses = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
         return {
           month: new Date(month + '-01').toLocaleDateString('uk-UA', { month: 'short', year: '2-digit' }),
-          Дохід: Math.round(t.income),
-          Витрати: Math.round(t.expenses),
+          Дохід: Math.round(income),
+          Витрати: Math.round(expenses),
         };
       });
-  }, [transactions]);
+  }, [transactions, convertAmount]);
 
-  // Daily cumulative balance line chart (last 30 days)
+  // Daily cumulative balance line chart (last 30 days) — converted
   const lineData = useMemo(() => {
     const sorted = [...transactions].filter((t) => t.date).sort((a, b) => a.date.localeCompare(b.date));
     if (sorted.length === 0) return [];
     const dayMap = {};
     for (const tx of sorted) {
-      dayMap[tx.date] = (dayMap[tx.date] || 0) + (tx.type === 'income' ? tx.amount : -tx.amount);
+      const converted = convertAmount(tx.amount || 0, tx.currency || 'RON');
+      dayMap[tx.date] = (dayMap[tx.date] || 0) + (tx.type === 'income' ? converted : -converted);
     }
     let running = 0;
     return Object.entries(dayMap)
@@ -89,14 +97,14 @@ export default function Overview() {
           Баланс: Math.round(running),
         };
       });
-  }, [transactions]);
+  }, [transactions, convertAmount]);
 
-  // Top 5 categories all-time for right panel
+  // Top 5 categories all-time for right panel — converted
   const topCategories = useMemo(() => {
     const catMap = {};
     transactions.filter((t) => t.type === 'expense').forEach((tx) => {
       const cat = tx.category || 'other';
-      catMap[cat] = (catMap[cat] || 0) + (tx.amount || 0);
+      catMap[cat] = (catMap[cat] || 0) + convertAmount(tx.amount || 0, tx.currency || 'RON');
     });
     return Object.entries(catMap)
       .sort(([, a], [, b]) => b - a)
@@ -105,7 +113,7 @@ export default function Overview() {
         const cat = resolveCategory(id, categories);
         return { ...cat, total };
       });
-  }, [transactions, categories]);
+  }, [transactions, categories, convertAmount]);
 
   const recent = transactions.slice(0, 5);
 
@@ -127,9 +135,9 @@ export default function Overview() {
 
         {/* ── Stats row ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 24 }}>
-          <StatCard label="Баланс (банк)" value={formatCurrency(bankBalance)} icon="account_balance" color="var(--primary)" />
-          <StatCard label="Всього доходів" value={formatCurrency(totals.income)} icon="trending_up" color="var(--secondary)" />
-          <StatCard label="Всього витрат" value={formatCurrency(totals.expenses)} icon="trending_down" color="var(--tertiary)" />
+          <StatCard label="Баланс (банк)" value={fmt(bankBalance)} icon="account_balance" color="var(--primary)" />
+          <StatCard label="Всього доходів" value={fmt(convertAmount(totals.income, 'RON'))} icon="trending_up" color="var(--secondary)" />
+          <StatCard label="Всього витрат" value={fmt(convertAmount(totals.expenses, 'RON'))} icon="trending_down" color="var(--tertiary)" />
         </div>
 
         {/* ── Line chart ── */}
@@ -150,7 +158,7 @@ export default function Overview() {
                 <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ borderRadius: 10, border: '1px solid var(--outline-variant)', fontSize: 13 }}
-                  formatter={(v) => [formatCurrency(v), 'Баланс']}
+                  formatter={(v) => [fmt(v), 'Баланс']}
                 />
                 <Line type="monotone" dataKey="Баланс" stroke="#004ac6" strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: '#004ac6' }} />
               </LineChart>
@@ -209,7 +217,7 @@ export default function Overview() {
                           </div>
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--on-surface)', whiteSpace: 'nowrap' }}>
-                          {formatCurrency(cat.spent)}
+                          {fmt(cat.spent)}
                         </span>
                       </div>
                       <div style={{ height: 6, background: 'var(--surface-container)', borderRadius: 3, overflow: 'hidden' }}>
@@ -306,7 +314,7 @@ export default function Overview() {
                         color: tx.type === 'income' ? 'var(--secondary)' : 'var(--on-surface)',
                         whiteSpace: 'nowrap',
                       }}>
-                        {tx.type === 'income' ? '+' : '−'}{formatCurrency(tx.amount, tx.currency)}
+                        {tx.type === 'income' ? '+' : '−'}{fmt(convertAmount(tx.amount, tx.currency || 'RON'))}
                       </td>
                     </tr>
                   );
@@ -342,7 +350,7 @@ export default function Overview() {
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 10, border: '1px solid var(--outline-variant)', fontSize: 13 }}
-                    formatter={(v) => formatCurrency(v)}
+                    formatter={(v) => fmt(v)}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="Дохід" fill="#006c49" radius={[4, 4, 0, 0]} />
@@ -369,7 +377,7 @@ export default function Overview() {
                           <span className="material-symbols-outlined" style={{ fontSize: 15, color: cat.color }}>{cat.icon}</span>
                           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-surface)' }}>{cat.name}</span>
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{formatCurrency(cat.total)}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{fmt(cat.total)}</span>
                       </div>
                       <div style={{ height: 5, background: 'var(--surface-container)', borderRadius: 3, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: cat.color, borderRadius: 3 }} />

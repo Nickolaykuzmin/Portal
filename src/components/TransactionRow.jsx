@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { useCategories } from '../hooks/useCategories';
+import { useAppContext } from '../context/AppContext';
 import { resolveCategory } from '../utils/categoryHelpers';
 
 // Clean up raw BT description for display
@@ -29,9 +30,11 @@ function cleanDisplayDesc(desc) {
 
 export default function TransactionRow({ transaction, onEdit, onDelete }) {
   const { categories } = useCategories();
+  const { displayCurrency, convertAmount } = useAppContext();
   const [hovered, setHovered] = useState(false);
   const category = resolveCategory(transaction.category, categories);
   const displayDesc = cleanDisplayDesc(transaction.description);
+  const displayAmount = convertAmount(transaction.amount || 0, transaction.currency || 'RON');
 
   return (
     <tr
@@ -109,7 +112,7 @@ export default function TransactionRow({ transaction, onEdit, onDelete }) {
           padding: '3px 8px', borderRadius: 8,
           background: transaction.type === 'income' ? '#dcfce7' : 'transparent',
         }}>
-          {transaction.type === 'income' ? '+' : '−'}{formatCurrency(transaction.amount, transaction.currency || 'RON')}
+          {transaction.type === 'income' ? '+' : '−'}{formatCurrency(displayAmount, displayCurrency)}
         </span>
       </td>
 

@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useAppContext } from '../context/AppContext';
 
 export default function TopBar({ title, onSearch }) {
   const [query, setQuery] = useState('');
+  const { displayCurrency, setDisplayCurrency } = useAppContext();
 
   const handleChange = (e) => {
     setQuery(e.target.value);
@@ -36,6 +38,37 @@ export default function TopBar({ title, onSearch }) {
       </h1>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        {/* Currency toggle */}
+        <div style={{
+          display: 'flex',
+          background: 'var(--surface-container)',
+          borderRadius: 20,
+          padding: 3,
+          border: '1px solid var(--outline-variant)',
+        }}>
+          {['RON', 'EUR'].map((cur) => (
+            <button
+              key={cur}
+              onClick={() => setDisplayCurrency(cur)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: 16,
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: '0.04em',
+                transition: 'all 0.18s ease',
+                background: displayCurrency === cur ? 'var(--primary)' : 'transparent',
+                color: displayCurrency === cur ? 'white' : 'var(--on-surface-variant)',
+                boxShadow: displayCurrency === cur ? '0 2px 8px rgba(0,74,198,0.25)' : 'none',
+              }}
+            >
+              {cur === 'EUR' ? '€ EUR' : 'lei RON'}
+            </button>
+          ))}
+        </div>
+
         {onSearch && (
           <div style={{ position: 'relative' }}>
             <span className="material-symbols-outlined" style={{

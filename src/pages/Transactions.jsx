@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
+import { useAppContext } from '../context/AppContext';
 import TransactionRow from '../components/TransactionRow';
 import EditTransactionModal from '../components/EditTransactionModal';
 import TopBar from '../components/TopBar';
-import { formatCurrency, calcTotals } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 
 function getMonthLabel(key) {
   // key = "YYYY-MM"
@@ -18,6 +19,9 @@ function getMonthLabel(key) {
 export default function Transactions() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { categories } = useCategories();
+  const { displayCurrency, convertAmount } = useAppContext();
+  const fmt = (amount) => formatCurrency(amount, displayCurrency);
+  const conv = (tx) => convertAmount(tx.amount || 0, tx.currency || 'RON');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -47,8 +51,8 @@ export default function Transactions() {
     return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
 
-  const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
-  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
 
   const toggleMonth = (key) =>
     setCollapsedMonths((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -83,10 +87,10 @@ export default function Transactions() {
               Показано: {filtered.length} транзакцій
             </span>
             <div style={{ display: 'flex', gap: 24 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--secondary)' }}>+{formatCurrency(totalIncome)}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--tertiary)' }}>−{formatCurrency(totalExpense)}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--secondary)' }}>+{fmt(totalIncome)}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--tertiary)' }}>−{fmt(totalExpense)}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>
-                ={formatCurrency(totalIncome - totalExpense)}
+                ={fmt(totalIncome - totalExpense)}
               </span>
             </div>
           </div>
@@ -146,8 +150,9 @@ export default function Transactions() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {grouped.map(([monthKey, txs]) => {
               const isCollapsed = collapsedMonths[monthKey];
-              const monthTotals = calcTotals(txs);
-              const net = monthTotals.income - monthTotals.expenses;
+              const monthIncome  = txs.filter((t) => t.type === 'income').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+              const monthExpense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+              const net = monthIncome - monthExpense;
 
               return (
                 <div key={monthKey} className="whisper-shadow" style={{ background: 'white', borderRadius: 16, overflow: 'hidden' }}>
@@ -174,14 +179,14 @@ export default function Transactions() {
                       </span>
                     </div>
                     <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                      {monthTotals.income > 0 && (
+                      {monthIncome > 0 && (
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--secondary)' }}>
-                          +{formatCurrency(monthTotals.income)}
+                          +{fmt(monthIncome)}
                         </span>
                       )}
-                      {monthTotals.expenses > 0 && (
+                      {monthExpense > 0 && (
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tertiary)' }}>
-                          −{formatCurrency(monthTotals.expenses)}
+                          −{fmt(monthExpense)}
                         </span>
                       )}
                       <span style={{
@@ -189,7 +194,7 @@ export default function Transactions() {
                         color: net >= 0 ? 'var(--secondary)' : 'var(--tertiary)',
                         paddingLeft: 12, borderLeft: '1px solid var(--outline-variant)',
                       }}>
-                        {net >= 0 ? '+' : ''}{formatCurrency(net)}
+                        {net >= 0 ? '+' : ''}{fmt(net)}
                       </span>
                     </div>
                   </div>

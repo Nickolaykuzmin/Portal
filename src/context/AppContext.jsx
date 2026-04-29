@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import {
   collection,
   addDoc,
@@ -31,12 +31,35 @@ export const DEFAULT_CATEGORIES = [
 
 const AppContext = createContext(null);
 
+// RON → EUR rate (fetched once, fallback to fixed rate)
+const FALLBACK_RON_TO_EUR = 0.201;
+
 export function AppProvider({ children }) {
   const [transactions, setTransactions]   = useState([]);
   const [categories,   setCategories]     = useState(DEFAULT_CATEGORIES);
   const [txLoading,    setTxLoading]      = useState(true);
   const [catLoading,   setCatLoading]     = useState(true);
+  const [displayCurrency, setDisplayCurrency] = useState('RON'); // 'RON' | 'EUR'
+  const [exchangeRate, setExchangeRate]   = useState(FALLBACK_RON_TO_EUR); // RON → EUR
   const seededRef = useRef(false);
+
+  // Fetch live EUR/RON rate once on mount
+  useEffect(() => {
+    fetch('https://api.frankfurter.app/latest?from=RON&to=EUR')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.rates?.EUR) setExchangeRate(data.rates.EUR);
+      })
+      .catch(() => { /* use fallback */ });
+  }, []);
+
+  // Convert amount from its native currency to displayCurrency
+  const convertAmount = useCallback((amount, nativeCurrency = 'RON') => {
+    if (displayCurrency === nativeCurrency) return amount;
+    if (displayCurrency === 'EUR' && nativeCurrency === 'RON') return amount * exchangeRate;
+    if (displayCurrency === 'RON' && nativeCurrency === 'EUR') return amount / exchangeRate;
+    return amount;
+  }, [displayCurrency, exchangeRate]);
 
   // ── Transactions listener ──────────────────────────────────────────────────
   useEffect(() => {
@@ -133,6 +156,11 @@ export function AppProvider({ children }) {
       categories,
       txLoading,
       catLoading,
+      // currency
+      displayCurrency,
+      setDisplayCurrency,
+      exchangeRate,
+      convertAmount,
       // tx actions
       addTransaction,
       addTransactions,
