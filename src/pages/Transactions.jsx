@@ -16,7 +16,7 @@ function getMonthLabel(key) {
   }
 }
 
-export default function Transactions() {
+export default function Transactions({ onMenuClick }) {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { categories } = useCategories();
   const { displayCurrency, convertAmount } = useAppContext();
@@ -73,8 +73,8 @@ export default function Transactions() {
 
   return (
     <>
-      <TopBar title="Транзакції" onSearch={setSearch} />
-      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }}>
+      <TopBar title="Транзакції" onSearch={setSearch} onMenuClick={onMenuClick} />
+      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }} className="page-content">
 
         {/* Summary bar */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 24, alignItems: 'center' }}>

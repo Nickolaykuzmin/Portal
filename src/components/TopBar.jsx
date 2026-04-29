@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
 
-export default function TopBar({ title, onSearch }) {
+export default function TopBar({ title, onSearch, onMenuClick }) {
   const [query, setQuery] = useState('');
   const { displayCurrency, setDisplayCurrency } = useAppContext();
 
@@ -11,33 +11,55 @@ export default function TopBar({ title, onSearch }) {
   };
 
   return (
-    <header style={{
-      position: 'fixed',
-      top: 0,
-      right: 0,
-      left: 240,
-      height: 64,
-      background: 'rgba(250,248,255,0.85)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid var(--outline-variant)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 32px',
-      zIndex: 40,
-    }}>
-      <h1 style={{
-        margin: 0,
-        fontFamily: 'Manrope',
-        fontSize: 20,
-        fontWeight: 700,
-        color: 'var(--on-surface)',
-        letterSpacing: '-0.3px',
-      }}>
-        {title}
-      </h1>
+    <header
+      className="topbar"
+      style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        left: 240,
+        height: 64,
+        background: 'rgba(250,248,255,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--outline-variant)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 32px',
+        zIndex: 40,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Hamburger — hidden on desktop, shown on mobile via CSS */}
+        <button
+          onClick={onMenuClick}
+          className="topbar-menu-btn"
+          style={{
+            display: 'none',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: 4, borderRadius: 8,
+            alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 24, color: 'var(--on-surface)' }}>menu</span>
+        </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <h1
+          className="topbar-title"
+          style={{
+            margin: 0,
+            fontFamily: 'Manrope',
+            fontSize: 20,
+            fontWeight: 700,
+            color: 'var(--on-surface)',
+            letterSpacing: '-0.3px',
+          }}
+        >
+          {title}
+        </h1>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {/* Currency toggle */}
         <div style={{
           display: 'flex',

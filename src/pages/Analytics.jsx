@@ -17,7 +17,7 @@ const PERIOD_OPTIONS = [
   { key: '3m',  label: '3 міс.' },
 ];
 
-export default function Analytics() {
+export default function Analytics({ onMenuClick }) {
   const { transactions } = useTransactions();
   const { categories } = useCategories();
   const [period, setPeriod] = useState('all');
@@ -80,7 +80,7 @@ export default function Analytics() {
 
   return (
     <>
-      <TopBar title="Аналітика" />
+      <TopBar title="Аналітика" onMenuClick={onMenuClick} />
       <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }}>
 
         {/* Period pills */}

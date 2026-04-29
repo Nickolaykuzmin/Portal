@@ -7,7 +7,7 @@ import TopBar from '../components/TopBar';
 
 const STEPS = ['upload', 'preview', 'done'];
 
-export default function Upload() {
+export default function Upload({ onMenuClick }) {
   const { addTransactions, mergeTransactions } = useTransactions();
   const { categories } = useCategories();
   const [step, setStep] = useState('upload');
@@ -94,7 +94,7 @@ export default function Upload() {
 
   return (
     <>
-      <TopBar title="Завантажити Statement" />
+      <TopBar title="Завантажити Statement" onMenuClick={onMenuClick} />
       <div style={{ padding: '80px 32px 32px', maxWidth: 900, margin: '0 auto' }}>
 
         {/* Step indicator */}

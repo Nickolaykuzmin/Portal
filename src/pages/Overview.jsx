@@ -12,7 +12,7 @@ import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';
 import TopBar from '../components/TopBar';
 
-export default function Overview() {
+export default function Overview({ onMenuClick }) {
   const { transactions, loading } = useTransactions();
   const { categories } = useCategories();
   const { displayCurrency, convertAmount } = useAppContext();
@@ -99,21 +99,40 @@ export default function Overview() {
       });
   }, [transactions, convertAmount]);
 
-  // Top 5 categories all-time for right panel — converted
-  const topCategories = useMemo(() => {
-    const catMap = {};
-    transactions.filter((t) => t.type === 'expense').forEach((tx) => {
-      const cat = tx.category || 'other';
-      catMap[cat] = (catMap[cat] || 0) + convertAmount(tx.amount || 0, tx.currency || 'RON');
+  // ── Month-over-month comparison ──────────────────────────────────────────
+  const monthComparison = useMemo(() => {
+    const now = new Date();
+    const thisMonthKey = now.toISOString().slice(0, 7);
+    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthKey = prevDate.toISOString().slice(0, 7);
+
+    const thisTxs = transactions.filter((t) => t.date?.startsWith(thisMonthKey) && t.type === 'expense');
+    const prevTxs = transactions.filter((t) => t.date?.startsWith(prevMonthKey) && t.type === 'expense');
+
+    const thisTotal = thisTxs.reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+    const prevTotal = prevTxs.reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+
+    if (prevTotal === 0) return null;
+    const diff = thisTotal - prevTotal;
+    const pct = Math.round(Math.abs(diff / prevTotal) * 100);
+    const prevMonthName = prevDate.toLocaleDateString('uk-UA', { month: 'long' });
+    return { thisTotal, prevTotal, diff, pct, prevMonthName, isMore: diff > 0 };
+  }, [transactions, convertAmount]);
+
+  // ── Top merchants ────────────────────────────────────────────────────────
+  const topMerchants = useMemo(() => {
+    const map = {};
+    transactions.filter((t) => t.type === 'expense' && t.description).forEach((tx) => {
+      // Normalize: take first 2-3 words as merchant key
+      const key = tx.description.trim().split(/\s+/).slice(0, 2).join(' ').toUpperCase();
+      if (!map[key]) map[key] = { name: key, total: 0, count: 0 };
+      map[key].total += convertAmount(tx.amount || 0, tx.currency || 'RON');
+      map[key].count += 1;
     });
-    return Object.entries(catMap)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([id, total]) => {
-        const cat = resolveCategory(id, categories);
-        return { ...cat, total };
-      });
-  }, [transactions, categories, convertAmount]);
+    return Object.values(map)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 7);
+  }, [transactions, convertAmount]);
 
   const recent = transactions.slice(0, 5);
 
@@ -130,15 +149,54 @@ export default function Overview() {
 
   return (
     <>
-      <TopBar title="Огляд" />
-      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }}>
+      <TopBar title="Огляд" onMenuClick={onMenuClick} />
+      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }} className="page-content">
 
         {/* ── Stats row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 24 }}>
+        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 24 }}>
           <StatCard label="Баланс (банк)" value={fmt(bankBalance)} icon="account_balance" color="var(--primary)" />
           <StatCard label="Всього доходів" value={fmt(convertAmount(totals.income, 'RON'))} icon="trending_up" color="var(--secondary)" />
           <StatCard label="Всього витрат" value={fmt(convertAmount(totals.expenses, 'RON'))} icon="trending_down" color="var(--tertiary)" />
         </div>
+
+        {/* ── Month comparison insight ── */}
+        {monthComparison && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '14px 20px', borderRadius: 14, marginBottom: 20,
+            background: monthComparison.isMore ? '#fff7ed' : '#f0fdf4',
+            border: `1px solid ${monthComparison.isMore ? '#fed7aa' : '#bbf7d0'}`,
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+              background: monthComparison.isMore ? '#ea580c18' : '#006c4918',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span className="material-symbols-outlined" style={{
+                fontSize: 20,
+                color: monthComparison.isMore ? '#ea580c' : '#006c49',
+                fontVariationSettings: "'FILL' 1",
+              }}>
+                {monthComparison.isMore ? 'trending_up' : 'trending_down'}
+              </span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--on-surface)' }}>
+                {monthComparison.isMore
+                  ? `Цього місяця ти витратив на ${monthComparison.pct}% більше ніж у ${monthComparison.prevMonthName}`
+                  : `Цього місяця ти витратив на ${monthComparison.pct}% менше ніж у ${monthComparison.prevMonthName}`
+                }
+              </span>
+              <div style={{ fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 2 }}>
+                {fmt(monthComparison.thisTotal)} цього місяця · {fmt(monthComparison.prevTotal)} у {monthComparison.prevMonthName}
+                {' · '}
+                <span style={{ fontWeight: 600, color: monthComparison.isMore ? '#ea580c' : '#006c49' }}>
+                  {monthComparison.isMore ? '+' : '−'}{fmt(Math.abs(monthComparison.diff))}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Line chart ── */}
         <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, padding: 24, marginBottom: 20 }}>
@@ -169,7 +227,7 @@ export default function Overview() {
         </div>
 
         {/* ── Budgets + Recent Activity ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20, marginBottom: 20 }}>
+        <div className="two-col-grid" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20, marginBottom: 20 }}>
 
           {/* Budgets */}
           <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, padding: 24 }}>
@@ -336,8 +394,8 @@ export default function Overview() {
           </div>
         </div>
 
-        {/* ── Bar chart + Top categories ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+        {/* ── Bar chart + Top merchants ── */}
+        <div className="chart-side-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
           <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, padding: 24 }}>
             <h2 style={{ margin: '0 0 16px', fontFamily: 'Manrope', fontSize: 18, fontWeight: 700, color: 'var(--on-surface)' }}>
               Доходи та витрати по місяцях
@@ -364,30 +422,44 @@ export default function Overview() {
 
           <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, padding: 24 }}>
             <h2 style={{ margin: '0 0 16px', fontFamily: 'Manrope', fontSize: 18, fontWeight: 700, color: 'var(--on-surface)' }}>
-              Топ витрат
+              Топ мерчантів
             </h2>
-            {topCategories.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {topCategories.map((cat) => {
-                  const pct = totals.expenses > 0 ? (cat.total / totals.expenses) * 100 : 0;
+            {topMerchants.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {topMerchants.map((m, i) => {
+                  const maxTotal = topMerchants[0].total;
+                  const pct = maxTotal > 0 ? (m.total / maxTotal) * 100 : 0;
+                  const colors = ['#004ac6', '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#d97706', '#059669'];
+                  const color = colors[i % colors.length];
                   return (
-                    <div key={cat.id || cat.name}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                    <div key={m.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 15, color: cat.color }}>{cat.icon}</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-surface)' }}>{cat.name}</span>
+                          <div style={{
+                            width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                            background: color + '18',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <span style={{ fontSize: 10, fontWeight: 800, color }}>{i + 1}</span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface)' }}>{m.name}</span>
+                            <span style={{ fontSize: 10, color: 'var(--outline)', marginLeft: 6 }}>{m.count}×</span>
+                          </div>
                         </div>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{fmt(cat.total)}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface)', whiteSpace: 'nowrap' }}>
+                          {fmt(m.total)}
+                        </span>
                       </div>
-                      <div style={{ height: 5, background: 'var(--surface-container)', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: cat.color, borderRadius: 3 }} />
+                      <div style={{ height: 4, background: 'var(--surface-container)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s ease' }} />
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <EmptyState icon="pie_chart" text="Немає витрат" />
+              <EmptyState icon="storefront" text="Немає даних" />
             )}
           </div>
         </div>

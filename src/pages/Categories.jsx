@@ -17,7 +17,7 @@ const COLORS = [
 
 const EMPTY_FORM = { name: '', icon: 'category', color: '#004ac6', type: 'expense' };
 
-export default function Categories() {
+export default function Categories({ onMenuClick }) {
   const { categories, loading, addCategory, updateCategory, deleteCategory } = useCategories();
   const [editCat, setEditCat] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -75,7 +75,7 @@ export default function Categories() {
 
   return (
     <>
-      <TopBar title="Категорії" />
+      <TopBar title="Категорії" onMenuClick={onMenuClick} />
       <div style={{ padding: '80px 32px 32px', maxWidth: 1000, margin: '0 auto' }}>
 
         {/* Header */}
