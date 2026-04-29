@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { createContext, useEffect, useRef, useState, useCallback } from 'react';
 import {
   collection,
   addDoc,
@@ -12,22 +12,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-
-// ─── Default categories ───────────────────────────────────────────────────────
-export const DEFAULT_CATEGORIES = [
-  { id: 'income',        name: 'Дохід',             icon: 'payments',        color: '#006c49', type: 'income',  isDefault: true },
-  { id: 'salary',        name: 'Зарплата',           icon: 'work',            color: '#006c49', type: 'income',  isDefault: true },
-  { id: 'food',          name: 'Їжа та ресторани',   icon: 'restaurant',      color: '#ea580c', type: 'expense', isDefault: true },
-  { id: 'transport',     name: 'Транспорт',           icon: 'commute',         color: '#2563eb', type: 'expense', isDefault: true },
-  { id: 'shopping',      name: 'Шопінг',              icon: 'shopping_bag',    color: '#7c3aed', type: 'expense', isDefault: true },
-  { id: 'utilities',     name: 'Комунальні',          icon: 'bolt',            color: '#d97706', type: 'expense', isDefault: true },
-  { id: 'health',        name: "Здоров'я",            icon: 'local_hospital',  color: '#dc2626', type: 'expense', isDefault: true },
-  { id: 'entertainment', name: 'Розваги',             icon: 'movie',           color: '#db2777', type: 'expense', isDefault: true },
-  { id: 'travel',        name: 'Подорожі',            icon: 'flight',          color: '#0891b2', type: 'expense', isDefault: true },
-  { id: 'education',     name: 'Освіта',              icon: 'school',          color: '#059669', type: 'expense', isDefault: true },
-  { id: 'cash',          name: 'Готівка',             icon: 'payments',        color: '#64748b', type: 'expense', isDefault: true },
-  { id: 'other',         name: 'Інше',                icon: 'category',        color: '#737686', type: 'expense', isDefault: true },
-];
+import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 
 const AppContext = createContext(null);
 
@@ -39,9 +24,31 @@ export function AppProvider({ children }) {
   const [categories,   setCategories]     = useState(DEFAULT_CATEGORIES);
   const [txLoading,    setTxLoading]      = useState(true);
   const [catLoading,   setCatLoading]     = useState(true);
-  const [displayCurrency, setDisplayCurrency] = useState('RON'); // 'RON' | 'EUR'
-  const [exchangeRate, setExchangeRate]   = useState(FALLBACK_RON_TO_EUR); // RON → EUR
+  const [displayCurrency, setDisplayCurrency] = useState('RON');
+  const [exchangeRate, setExchangeRate]   = useState(FALLBACK_RON_TO_EUR);
   const seededRef = useRef(false);
+
+  // Write only the default categories that are missing in Firestore
+  async function syncDefaultCategories(existingIds) {
+    try {
+      const missing = DEFAULT_CATEGORIES.filter((cat) => !existingIds.includes(cat.id));
+      if (missing.length === 0) return;
+      await Promise.all(
+        missing.map((cat) =>
+          setDoc(doc(db, 'categories', cat.id), {
+            name:      cat.name,
+            icon:      cat.icon,
+            color:     cat.color,
+            type:      cat.type,
+            isDefault: cat.isDefault,
+            createdAt: serverTimestamp(),
+          }),
+        ),
+      );
+    } catch (e) {
+      console.error('Sync categories error:', e);
+    }
+  }
 
   // Fetch live EUR/RON rate once on mount
   useEffect(() => {
@@ -102,28 +109,6 @@ export function AppProvider({ children }) {
     return unsub;
   }, []);
 
-  // Write only the default categories that are missing in Firestore
-  const syncDefaultCategories = async (existingIds) => {
-    try {
-      const missing = DEFAULT_CATEGORIES.filter((cat) => !existingIds.includes(cat.id));
-      if (missing.length === 0) return;
-      await Promise.all(
-        missing.map((cat) =>
-          setDoc(doc(db, 'categories', cat.id), {
-            name:      cat.name,
-            icon:      cat.icon,
-            color:     cat.color,
-            type:      cat.type,
-            isDefault: cat.isDefault,
-            createdAt: serverTimestamp(),
-          }),
-        ),
-      );
-    } catch (e) {
-      console.error('Sync categories error:', e);
-    }
-  };
-
   // ── Transaction actions ────────────────────────────────────────────────────
   const addTransaction = (tx) =>
     addDoc(collection(db, 'transactions'), { ...tx, createdAt: serverTimestamp() });
@@ -132,6 +117,23 @@ export function AppProvider({ children }) {
     Promise.all(list.map((tx) =>
       addDoc(collection(db, 'transactions'), { ...tx, createdAt: serverTimestamp() }),
     ));
+
+  // Merge: add only transactions that don't already exist (by date|amount|desc key)
+  const mergeTransactions = async (list) => {
+    const existingKeys = new Set(
+      transactions.map((tx) => `${tx.date}|${tx.amount}|${(tx.description || '').slice(0, 20)}`)
+    );
+    const newOnly = list.filter((tx) => {
+      const key = `${tx.date}|${tx.amount}|${(tx.description || '').slice(0, 20)}`;
+      return !existingKeys.has(key);
+    });
+    if (newOnly.length > 0) {
+      await Promise.all(newOnly.map((tx) =>
+        addDoc(collection(db, 'transactions'), { ...tx, createdAt: serverTimestamp() }),
+      ));
+    }
+    return { added: newOnly.length, skipped: list.length - newOnly.length };
+  };
 
   const updateTransaction = (id, data) =>
     updateDoc(doc(db, 'transactions', id), data);
@@ -164,6 +166,7 @@ export function AppProvider({ children }) {
       // tx actions
       addTransaction,
       addTransactions,
+      mergeTransactions,
       updateTransaction,
       deleteTransaction,
       // cat actions
@@ -176,8 +179,4 @@ export function AppProvider({ children }) {
   );
 }
 
-export function useAppContext() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useAppContext must be used inside AppProvider');
-  return ctx;
-}
+export { AppContext };

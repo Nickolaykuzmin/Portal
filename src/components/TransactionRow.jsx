@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { useCategories } from '../hooks/useCategories';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../hooks/useAppContext';
 import { resolveCategory } from '../utils/categoryHelpers';
 
 // Clean up raw BT description for display

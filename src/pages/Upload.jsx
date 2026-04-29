@@ -8,7 +8,7 @@ import TopBar from '../components/TopBar';
 const STEPS = ['upload', 'preview', 'done'];
 
 export default function Upload() {
-  const { addTransactions } = useTransactions();
+  const { addTransactions, mergeTransactions } = useTransactions();
   const { categories } = useCategories();
   const [step, setStep] = useState('upload');
   const [dragging, setDragging] = useState(false);
@@ -17,6 +17,8 @@ export default function Upload() {
   const [selected, setSelected] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [mergeResult, setMergeResult] = useState(null); // { added, skipped }
+  const [saveMode, setSaveMode] = useState('merge'); // 'merge' | 'all'
   const fileRef = useRef();
 
   const handleFile = async (file) => {
@@ -51,7 +53,13 @@ export default function Upload() {
     setSaving(true);
     try {
       const toSave = parseResult.transactions.filter((_, i) => selected.includes(i));
-      await addTransactions(toSave);
+      if (saveMode === 'merge') {
+        const result = await mergeTransactions(toSave);
+        setMergeResult(result);
+      } else {
+        await addTransactions(toSave);
+        setMergeResult({ added: toSave.length, skipped: 0 });
+      }
       setStep('done');
     } catch (e) {
       setError('Помилка збереження: ' + e.message);
@@ -383,38 +391,72 @@ export default function Upload() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={() => { setStep('upload'); setParseResult(null); }}
-                    style={{
-                      padding: '12px 24px', borderRadius: 12, border: '1px solid var(--outline-variant)',
-                      background: 'white', color: 'var(--on-surface)', fontWeight: 600, fontSize: 14, cursor: 'pointer',
-                    }}
-                  >
-                    ← Назад
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving || selected.length === 0}
-                    style={{
-                      padding: '12px 28px', borderRadius: 12, border: 'none',
-                      background: selected.length === 0 ? 'var(--outline-variant)' : 'var(--primary)',
-                      color: 'white', fontWeight: 600, fontSize: 14, cursor: selected.length === 0 ? 'not-allowed' : 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 8,
-                    }}
-                  >
-                    {saving ? (
-                      <>
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>hourglass_top</span>
-                        Збереження...
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>save</span>
-                        Зберегти {selected.length} транзакцій
-                      </>
-                    )}
-                  </button>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
+                  {/* Save mode toggle */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'var(--surface-container-low)', borderRadius: 10,
+                    padding: '8px 14px', border: '1px solid var(--outline-variant)',
+                  }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--outline)' }}>info</span>
+                    <span style={{ fontSize: 12, color: 'var(--on-surface-variant)', fontWeight: 500 }}>Режим:</span>
+                    {[
+                      { key: 'merge', label: 'Оновити (без дублів)', icon: 'merge' },
+                      { key: 'all',   label: 'Додати всі',           icon: 'add_circle' },
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        onClick={() => setSaveMode(m.key)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 5,
+                          padding: '5px 12px', borderRadius: 8, border: '1px solid',
+                          borderColor: saveMode === m.key ? 'var(--primary)' : 'var(--outline-variant)',
+                          background: saveMode === m.key ? 'var(--primary)' : 'white',
+                          color: saveMode === m.key ? 'white' : 'var(--on-surface-variant)',
+                          fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{m.icon}</span>
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button
+                      onClick={() => { setStep('upload'); setParseResult(null); }}
+                      style={{
+                        padding: '12px 24px', borderRadius: 12, border: '1px solid var(--outline-variant)',
+                        background: 'white', color: 'var(--on-surface)', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                      }}
+                    >
+                      ← Назад
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving || selected.length === 0}
+                      style={{
+                        padding: '12px 28px', borderRadius: 12, border: 'none',
+                        background: selected.length === 0 ? 'var(--outline-variant)' : 'var(--primary)',
+                        color: 'white', fontWeight: 600, fontSize: 14, cursor: selected.length === 0 ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                      }}
+                    >
+                      {saving ? (
+                        <>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>hourglass_top</span>
+                          Збереження...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                            {saveMode === 'merge' ? 'merge' : 'save'}
+                          </span>
+                          {saveMode === 'merge' ? `Оновити (${selected.length})` : `Зберегти ${selected.length}`}
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </>
             )}
@@ -436,12 +478,45 @@ export default function Upload() {
             <h2 style={{ fontFamily: 'Manrope', fontSize: 24, fontWeight: 700, color: 'var(--on-surface)', margin: '0 0 12px' }}>
               Успішно збережено!
             </h2>
+
+            {/* Merge result stats */}
+            {mergeResult && (
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', margin: '0 0 24px' }}>
+                <div style={{
+                  padding: '14px 24px', borderRadius: 12,
+                  background: '#dcfce7', border: '1px solid #bbf7d0',
+                }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--secondary)', fontFamily: 'Manrope' }}>
+                    +{mergeResult.added}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', marginTop: 2 }}>
+                    нових додано
+                  </div>
+                </div>
+                {mergeResult.skipped > 0 && (
+                  <div style={{
+                    padding: '14px 24px', borderRadius: 12,
+                    background: 'var(--surface-container)', border: '1px solid var(--outline-variant)',
+                  }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--outline)', fontFamily: 'Manrope' }}>
+                      {mergeResult.skipped}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', marginTop: 2 }}>
+                      вже існували
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <p style={{ fontSize: 15, color: 'var(--on-surface-variant)', margin: '0 0 32px' }}>
-              {selected.length} транзакцій додано до вашого кабінету
+              {mergeResult?.skipped > 0
+                ? `${mergeResult.skipped} транзакцій пропущено — вони вже були в базі`
+                : 'Всі транзакції успішно додано'}
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button
-                onClick={() => { setStep('upload'); setParseResult(null); setSelected([]); }}
+                onClick={() => { setStep('upload'); setParseResult(null); setSelected([]); setMergeResult(null); }}
                 style={{
                   padding: '12px 24px', borderRadius: 12, border: '1px solid var(--outline-variant)',
                   background: 'white', color: 'var(--on-surface)', fontWeight: 600, fontSize: 14, cursor: 'pointer',

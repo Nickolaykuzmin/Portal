@@ -6,7 +6,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../hooks/useAppContext';
 import { formatCurrency, formatDate, calcTotals, groupByMonth } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../hooks/useAppContext';
 
 export default function TopBar({ title, onSearch }) {
   const [query, setQuery] = useState('');

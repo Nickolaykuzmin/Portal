@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORIES } from '../context/AppContext';
+import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 
 // Icon fallbacks per category id — covers any id that might come from the parser
 const ICON_MAP = {
