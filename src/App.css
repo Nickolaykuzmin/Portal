@@ -1,0 +1,32 @@
+/* App-level styles — most styling is inline for component isolation */
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Remove default button styles */
+button {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Table reset */
+table {
+  border-spacing: 0;
+}
+
+/* Input focus glow */
+input:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(0, 74, 198, 0.1);
+}
