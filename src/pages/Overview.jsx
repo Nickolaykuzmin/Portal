@@ -185,13 +185,13 @@ export default function Overview() {
             {budgetCategories.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {budgetCategories.map((cat) => {
-                  // Use all-time max for this category as "budget" reference
-                  const allTimeSpent = topCategories.find((c) => c.id === cat.id)?.total || cat.spent;
-                  const pct = allTimeSpent > 0 ? Math.min((cat.spent / allTimeSpent) * 100, 100) : 0;
+                  // % of total expenses this month
+                  const totalMonthExpenses = budgetCategories.reduce((s, c) => s + c.spent, 0);
+                  const pct = totalMonthExpenses > 0 ? Math.min((cat.spent / totalMonthExpenses) * 100, 100) : 0;
                   const pctLabel = Math.round(pct);
 
-                  // Color: green < 50%, orange 50-80%, red > 80%
-                  const barColor = pct < 50 ? cat.color : pct < 80 ? '#ea580c' : '#ac0031';
+                  // Color: green < 20%, orange 20-40%, red > 40%
+                  const barColor = pct < 20 ? cat.color : pct < 40 ? '#ea580c' : '#ac0031';
 
                   return (
                     <div key={cat.id} className="whisper-shadow" style={{
@@ -213,7 +213,7 @@ export default function Overview() {
                           </div>
                           <div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--on-surface)' }}>{cat.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--outline)', marginTop: 1 }}>{pctLabel}% від загального</div>
+                            <div style={{ fontSize: 11, color: 'var(--outline)', marginTop: 1 }}>{pctLabel}% від витрат місяця</div>
                           </div>
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--on-surface)', whiteSpace: 'nowrap' }}>
