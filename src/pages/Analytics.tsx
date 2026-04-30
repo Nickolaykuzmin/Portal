@@ -115,7 +115,7 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
         </div>
 
         {/* KPI cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }} className="stats-grid kpi-grid">
           {kpis.map((kpi) => (
             <div key={kpi.label} style={{
               background: 'white', borderRadius: 16, padding: '18px 20px',
@@ -168,7 +168,7 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
         </div>
 
         {/* Pie charts */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="charts-grid">
           <PieCard title="Витрати за категоріями" data={expensePie} total={totals.expenses} />
           <PieCard title="Доходи за категоріями"  data={incomePie}  total={totals.income} />
         </div>

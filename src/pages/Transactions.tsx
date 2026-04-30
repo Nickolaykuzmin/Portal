@@ -79,7 +79,7 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
       <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }} className="page-content">
 
         {/* Summary bar */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 24, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24, alignItems: 'center' }} className="tx-summary-bar">
           <div style={{
             flex: 1, background: 'white', borderRadius: 12, padding: '14px 20px',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -88,7 +88,7 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Показано: {filtered.length} транзакцій
             </span>
-            <div style={{ display: 'flex', gap: 24 }}>
+            <div style={{ display: 'flex', gap: 24 }} className="tx-summary-amounts">
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--secondary)' }}>+{fmt(totalIncome)}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--tertiary)' }}>−{fmt(totalExpense)}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>
@@ -197,11 +197,12 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
                   </div>
 
                   {!isCollapsed && (
+                    <div className="table-scroll-wrap">
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--outline-variant)' }}>
                           {['Транзакція', 'Дата', 'Категорія', 'Сума', ''].map((h) => (
-                            <th key={h} style={{
+                            <th key={h} className={h === 'Дата' || h === 'Категорія' ? 'hide-mobile' : ''} style={{
                               padding: '10px 16px',
                               textAlign: h === 'Сума' ? 'right' : 'left',
                               fontSize: 11, fontWeight: 600,
@@ -222,6 +223,7 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   )}
                 </div>
               );

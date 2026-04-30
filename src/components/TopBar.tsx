@@ -98,7 +98,7 @@ export default function TopBar({ title, onSearch, onMenuClick }: TopBarProps) {
         </div>
 
         {onSearch && (
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} className="topbar-search">
             <span className="material-symbols-outlined" style={{
               position: 'absolute',
               left: 10,

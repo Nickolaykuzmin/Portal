@@ -84,12 +84,12 @@ export default function TransactionRow({ transaction, onEdit, onDelete }: Transa
       </td>
 
       {/* Date */}
-      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--on-surface-variant)', whiteSpace: 'nowrap' }}>
+      <td className="hide-mobile" style={{ padding: '12px 16px', fontSize: 12, color: 'var(--on-surface-variant)', whiteSpace: 'nowrap' }}>
         {formatDate(transaction.date)}
       </td>
 
       {/* Category chip */}
-      <td style={{ padding: '12px 16px' }}>
+      <td className="hide-mobile" style={{ padding: '12px 16px' }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           padding: '4px 10px', borderRadius: 20,

@@ -76,7 +76,7 @@ body {
 
 /* ── Mobile responsive ──────────────────────────────────────────────────── */
 
-/* Sidebar hidden on mobile, shown via .sidebar-open on body */
+/* Sidebar hidden on mobile, shown via .open class */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -98,48 +98,83 @@ body {
   .topbar-menu-btn {
     display: flex !important;
   }
-  /* Stack stat cards vertically */
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+
+  /* ── Grids ── */
   .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .charts-grid,
+  .two-col-grid,
+  .chart-side-grid,
+  .kpi-grid {
     grid-template-columns: 1fr !important;
   }
-  /* Stack two-column layouts */
-  .two-col-grid {
-    grid-template-columns: 1fr !important;
-  }
-  /* Full-width chart panels */
-  .chart-side-grid {
-    grid-template-columns: 1fr !important;
-  }
-  /* Reduce padding */
+
+  /* ── Page padding ── */
   .page-content {
     padding: 72px 16px 24px !important;
   }
-  /* Hide table columns on small screens */
+
+  /* ── TopBar ── */
+  .topbar-title {
+    font-size: 16px !important;
+  }
+  /* Hide search on mobile — too cramped */
+  .topbar-search {
+    display: none !important;
+  }
+
+  /* ── Tables: hide less important columns ── */
   .hide-mobile {
     display: none !important;
   }
-  /* Compact topbar */
-  .topbar-title {
-    font-size: 16px !important;
+
+  /* ── Transaction table: allow horizontal scroll ── */
+  .table-scroll-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
 @media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
   .page-content {
     padding: 68px 12px 20px !important;
   }
 }
 
+/* ── Upload page ── */
 @media (max-width: 768px) {
-  .sidebar-close-btn {
-    display: flex !important;
+  .banks-grid {
+    grid-template-columns: 1fr 1fr !important;
   }
-  /* Search input compact on mobile */
-  .topbar input {
-    width: 160px !important;
+  .upload-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── Categories grid ── */
+@media (max-width: 480px) {
+  .categories-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── Summary bar on Transactions ── */
+@media (max-width: 768px) {
+  .tx-summary-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .tx-summary-amounts {
+    gap: 12px !important;
   }
 }
