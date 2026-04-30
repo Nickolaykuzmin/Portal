@@ -6,9 +6,9 @@ import TransactionRow from '../components/TransactionRow';
 import EditTransactionModal from '../components/EditTransactionModal';
 import TopBar from '../components/TopBar';
 import { formatCurrency } from '../utils/formatters';
+import type { Transaction } from '../types';
 
-function getMonthLabel(key) {
-  // key = "YYYY-MM"
+function getMonthLabel(key: string): string {
   try {
     return new Date(key + '-01').toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
   } catch {
@@ -16,20 +16,24 @@ function getMonthLabel(key) {
   }
 }
 
-export default function Transactions({ onMenuClick }) {
+interface TransactionsProps {
+  onMenuClick?: () => void;
+}
+
+export default function Transactions({ onMenuClick }: TransactionsProps) {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { categories } = useCategories();
   const { displayCurrency, convertAmount } = useAppContext();
-  const fmt = (amount) => formatCurrency(amount, displayCurrency);
-  const conv = (tx) => convertAmount(tx.amount || 0, tx.currency || 'RON');
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [editTx, setEditTx] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [collapsedMonths, setCollapsedMonths] = useState({});
+  const fmt = (amount: number) => formatCurrency(amount, displayCurrency);
+  const conv = (tx: Transaction) => convertAmount(tx.amount || 0, tx.currency || 'RON');
 
-  // Filter
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [editTx, setEditTx] = useState<Partial<Transaction> | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [collapsedMonths, setCollapsedMonths] = useState<Record<string, boolean>>({});
+
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       const matchSearch = !search || tx.description?.toLowerCase().includes(search.toLowerCase());
@@ -39,35 +43,33 @@ export default function Transactions({ onMenuClick }) {
     });
   }, [transactions, search, filterType, filterCategory]);
 
-  // Group by month
   const grouped = useMemo(() => {
-    const map = {};
+    const map: Record<string, Transaction[]> = {};
     for (const tx of filtered) {
       const key = tx.date ? tx.date.slice(0, 7) : 'unknown';
       if (!map[key]) map[key] = [];
       map[key].push(tx);
     }
-    // Sort months descending
     return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
 
-  const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
-  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+  const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + conv(t), 0);
+  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + conv(t), 0);
 
-  const toggleMonth = (key) =>
+  const toggleMonth = (key: string) =>
     setCollapsedMonths((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const handleEdit = (tx) => { setEditTx(tx); setShowModal(true); };
+  const handleEdit = (tx: Transaction) => { setEditTx(tx); setShowModal(true); };
   const handleNew  = () => { setEditTx({ date: new Date().toISOString().split('T')[0] }); setShowModal(true); };
 
-  const handleSave = async (data) => {
+  const handleSave = async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
     if (editTx?.id) await updateTransaction(editTx.id, data);
     else await addTransaction(data);
     setShowModal(false);
     setEditTx(null);
   };
 
-  const handleDelete = async (tx) => {
+  const handleDelete = async (tx: Transaction) => {
     if (window.confirm(`Видалити "${tx.description}"?`)) await deleteTransaction(tx.id);
   };
 
@@ -110,7 +112,7 @@ export default function Transactions({ onMenuClick }) {
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-          {['all', 'income', 'expense'].map((t) => (
+          {(['all', 'income', 'expense'] as const).map((t) => (
             <button key={t} onClick={() => setFilterType(t)} style={{
               padding: '7px 16px', borderRadius: 20, border: '1px solid',
               borderColor: filterType === t ? 'var(--primary)' : 'var(--outline-variant)',
@@ -150,13 +152,12 @@ export default function Transactions({ onMenuClick }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {grouped.map(([monthKey, txs]) => {
               const isCollapsed = collapsedMonths[monthKey];
-              const monthIncome  = txs.filter((t) => t.type === 'income').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
-              const monthExpense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+              const monthIncome  = txs.filter((t) => t.type === 'income').reduce((s, t) => s + conv(t), 0);
+              const monthExpense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + conv(t), 0);
               const net = monthIncome - monthExpense;
 
               return (
                 <div key={monthKey} className="whisper-shadow" style={{ background: 'white', borderRadius: 16, overflow: 'hidden' }}>
-                  {/* Month header */}
                   <div
                     onClick={() => toggleMonth(monthKey)}
                     style={{
@@ -180,14 +181,10 @@ export default function Transactions({ onMenuClick }) {
                     </div>
                     <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                       {monthIncome > 0 && (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--secondary)' }}>
-                          +{fmt(monthIncome)}
-                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--secondary)' }}>+{fmt(monthIncome)}</span>
                       )}
                       {monthExpense > 0 && (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tertiary)' }}>
-                          −{fmt(monthExpense)}
-                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tertiary)' }}>−{fmt(monthExpense)}</span>
                       )}
                       <span style={{
                         fontSize: 13, fontWeight: 700,
@@ -199,7 +196,6 @@ export default function Transactions({ onMenuClick }) {
                     </div>
                   </div>
 
-                  {/* Transactions table */}
                   {!isCollapsed && (
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>

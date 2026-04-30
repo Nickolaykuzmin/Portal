@@ -20,12 +20,12 @@ export default function App() {
           style={{ marginLeft: 240, flex: 1, minHeight: '100vh' }}
         >
           <Routes>
-            <Route path="/" element={<Overview onMenuClick={() => setSidebarOpen(true)} />} />
+            <Route path="/"             element={<Overview     onMenuClick={() => setSidebarOpen(true)} />} />
             <Route path="/transactions" element={<Transactions onMenuClick={() => setSidebarOpen(true)} />} />
-            <Route path="/upload" element={<Upload onMenuClick={() => setSidebarOpen(true)} />} />
-            <Route path="/categories" element={<Categories onMenuClick={() => setSidebarOpen(true)} />} />
-            <Route path="/analytics" element={<Analytics onMenuClick={() => setSidebarOpen(true)} />} />
-            <Route path="/debug" element={<Debug />} />
+            <Route path="/upload"       element={<Upload       onMenuClick={() => setSidebarOpen(true)} />} />
+            <Route path="/categories"   element={<Categories   onMenuClick={() => setSidebarOpen(true)} />} />
+            <Route path="/analytics"    element={<Analytics    onMenuClick={() => setSidebarOpen(true)} />} />
+            <Route path="/debug"        element={<Debug />} />
           </Routes>
         </main>
       </div>

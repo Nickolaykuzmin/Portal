@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
+import type { Currency } from '../types';
 
-export default function TopBar({ title, onSearch, onMenuClick }) {
+interface TopBarProps {
+  title: string;
+  onSearch?: (query: string) => void;
+  onMenuClick?: () => void;
+}
+
+export default function TopBar({ title, onSearch, onMenuClick }: TopBarProps) {
   const [query, setQuery] = useState('');
   const { displayCurrency, setDisplayCurrency } = useAppContext();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
     onSearch?.(e.target.value);
   };
@@ -30,7 +37,6 @@ export default function TopBar({ title, onSearch, onMenuClick }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Hamburger — hidden on desktop, shown on mobile via CSS */}
         <button
           onClick={onMenuClick}
           className="topbar-menu-btn"
@@ -68,7 +74,7 @@ export default function TopBar({ title, onSearch, onMenuClick }) {
           padding: 3,
           border: '1px solid var(--outline-variant)',
         }}>
-          {['RON', 'EUR'].map((cur) => (
+          {(['RON', 'EUR'] as Currency[]).map((cur) => (
             <button
               key={cur}
               onClick={() => setDisplayCurrency(cur)}

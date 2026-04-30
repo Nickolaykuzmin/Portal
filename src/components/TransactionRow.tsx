@@ -3,9 +3,9 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 import { useCategories } from '../hooks/useCategories';
 import { useAppContext } from '../hooks/useAppContext';
 import { resolveCategory } from '../utils/categoryHelpers';
+import type { Transaction } from '../types';
 
-// Clean up raw BT description for display
-function cleanDisplayDesc(desc) {
+function cleanDisplayDesc(desc: string | undefined): string {
   if (!desc) return '—';
   return desc
     .replace(/^cu card VISA\s+/i, '')
@@ -28,7 +28,13 @@ function cleanDisplayDesc(desc) {
     .slice(0, 55);
 }
 
-export default function TransactionRow({ transaction, onEdit, onDelete }) {
+interface TransactionRowProps {
+  transaction: Transaction;
+  onEdit?: (tx: Transaction) => void;
+  onDelete?: (tx: Transaction) => void;
+}
+
+export default function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
   const { categories } = useCategories();
   const { displayCurrency, convertAmount } = useAppContext();
   const [hovered, setHovered] = useState(false);
@@ -92,10 +98,7 @@ export default function TransactionRow({ transaction, onEdit, onDelete }) {
           color: category.color || '#737686',
           whiteSpace: 'nowrap',
         }}>
-          <span className="material-symbols-outlined" style={{
-            fontSize: 12,
-            fontVariationSettings: "'FILL' 1",
-          }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 12, fontVariationSettings: "'FILL' 1" }}>
             {category.icon || 'category'}
           </span>
           {category.name || 'Інше'}

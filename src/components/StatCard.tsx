@@ -1,4 +1,18 @@
-export default function StatCard({ label, value, icon, color = 'var(--primary)', sub, badge }) {
+interface Badge {
+  positive: boolean;
+  text: string;
+}
+
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: string;
+  color?: string;
+  sub?: string;
+  badge?: Badge;
+}
+
+export default function StatCard({ label, value, icon, color = 'var(--primary)', sub, badge }: StatCardProps) {
   return (
     <div style={{
       background: 'white',
@@ -12,7 +26,6 @@ export default function StatCard({ label, value, icon, color = 'var(--primary)',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Subtle background accent */}
       <div style={{
         position: 'absolute', top: 0, right: 0,
         width: 80, height: 80,

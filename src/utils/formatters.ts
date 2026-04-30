@@ -1,7 +1,9 @@
+import type { Transaction, Totals, Currency } from '../types';
+
 /**
  * Format a number as currency
  */
-export function formatCurrency(amount, currency = 'RON') {
+export function formatCurrency(amount: number | null | undefined, currency: Currency | string = 'RON'): string {
   if (amount === null || amount === undefined) return '—';
   return new Intl.NumberFormat('ro-RO', {
     style: 'currency',
@@ -14,7 +16,7 @@ export function formatCurrency(amount, currency = 'RON') {
 /**
  * Format a date string to readable format
  */
-export function formatDate(dateStr) {
+export function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
   try {
     const date = new Date(dateStr);
@@ -31,7 +33,7 @@ export function formatDate(dateStr) {
 /**
  * Format a date to short format
  */
-export function formatDateShort(dateStr) {
+export function formatDateShort(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
   try {
     const date = new Date(dateStr);
@@ -47,7 +49,7 @@ export function formatDateShort(dateStr) {
 /**
  * Get month name
  */
-export function getMonthName(dateStr) {
+export function getMonthName(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
   try {
     const date = new Date(dateStr);
@@ -58,10 +60,10 @@ export function getMonthName(dateStr) {
 }
 
 /**
- * Group transactions by month
+ * Group transactions by month key (YYYY-MM)
  */
-export function groupByMonth(transactions) {
-  const groups = {};
+export function groupByMonth(transactions: Transaction[]): Record<string, Transaction[]> {
+  const groups: Record<string, Transaction[]> = {};
   transactions.forEach((tx) => {
     const key = tx.date ? tx.date.slice(0, 7) : 'unknown';
     if (!groups[key]) groups[key] = [];
@@ -73,8 +75,8 @@ export function groupByMonth(transactions) {
 /**
  * Calculate totals from transactions
  */
-export function calcTotals(transactions) {
-  return transactions.reduce(
+export function calcTotals(transactions: Transaction[]): Totals {
+  return transactions.reduce<Totals>(
     (acc, tx) => {
       if (tx.type === 'income') {
         acc.income += tx.amount || 0;
@@ -83,15 +85,17 @@ export function calcTotals(transactions) {
       }
       return acc;
     },
-    { income: 0, expenses: 0 }
+    { income: 0, expenses: 0 },
   );
 }
 
 /**
  * Group transactions by category and sum amounts
  */
-export function groupByCategory(transactions) {
-  const groups = {};
+export function groupByCategory(
+  transactions: Transaction[],
+): Record<string, { total: number; count: number; transactions: Transaction[] }> {
+  const groups: Record<string, { total: number; count: number; transactions: Transaction[] }> = {};
   transactions.forEach((tx) => {
     const cat = tx.category || 'other';
     if (!groups[cat]) groups[cat] = { total: 0, count: 0, transactions: [] };

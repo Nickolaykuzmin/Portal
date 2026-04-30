@@ -1,4 +1,6 @@
-export const DEFAULT_CATEGORIES = [
+import type { Category } from '../types';
+
+export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'income',        name: 'Дохід',             icon: 'payments',        color: '#006c49', type: 'income',  isDefault: true },
   { id: 'salary',        name: 'Зарплата',           icon: 'work',            color: '#006c49', type: 'income',  isDefault: true },
   { id: 'food',          name: 'Їжа та ресторани',   icon: 'restaurant',      color: '#ea580c', type: 'expense', isDefault: true },

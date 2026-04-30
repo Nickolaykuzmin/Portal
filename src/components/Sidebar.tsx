@@ -1,6 +1,12 @@
 import { NavLink } from 'react-router-dom';
 
-const navItems = [
+interface NavItem {
+  to: string;
+  icon: string;
+  label: string;
+}
+
+const navItems: NavItem[] = [
   { to: '/',             icon: 'grid_view',    label: 'Огляд' },
   { to: '/transactions', icon: 'receipt_long', label: 'Транзакції' },
   { to: '/upload',       icon: 'upload_file',  label: 'Завантажити' },
@@ -8,7 +14,12 @@ const navItems = [
   { to: '/analytics',    icon: 'insights',     label: 'Аналітика' },
 ];
 
-export default function Sidebar({ open, onClose }) {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <>
       {/* Mobile overlay */}
@@ -55,14 +66,13 @@ export default function Sidebar({ open, onClose }) {
             </div>
             <div>
               <div style={{ fontFamily: 'Manrope', fontWeight: 800, fontSize: 16, color: 'var(--on-surface)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
-                Zenith
+                Finio
               </div>
               <div style={{ fontFamily: 'Manrope', fontWeight: 600, fontSize: 11, color: 'var(--outline)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                 Finance
               </div>
             </div>
           </div>
-          {/* Close button — only visible on mobile */}
           <button
             onClick={onClose}
             style={{

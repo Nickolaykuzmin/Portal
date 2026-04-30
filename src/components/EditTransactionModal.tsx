@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useCategories } from '../hooks/useCategories';
+import type { Transaction, TransactionType, Currency } from '../types';
 
-export default function EditTransactionModal({ transaction, onSave, onClose }) {
+interface FormState {
+  description: string;
+  amount: string;
+  date: string;
+  type: TransactionType;
+  category: string;
+  currency: Currency;
+}
+
+interface EditTransactionModalProps {
+  transaction: Partial<Transaction> | null;
+  onSave: (data: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  onClose: () => void;
+}
+
+export default function EditTransactionModal({ transaction, onSave, onClose }: EditTransactionModalProps) {
   const { categories } = useCategories();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     description: '',
     amount: '',
     date: '',
@@ -16,7 +32,7 @@ export default function EditTransactionModal({ transaction, onSave, onClose }) {
     if (transaction) {
       setForm({
         description: transaction.description || '',
-        amount: transaction.amount || '',
+        amount: transaction.amount != null ? String(transaction.amount) : '',
         date: transaction.date || '',
         type: transaction.type || 'expense',
         category: transaction.category || 'other',
@@ -25,12 +41,19 @@ export default function EditTransactionModal({ transaction, onSave, onClose }) {
     }
   }, [transaction]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ ...form, amount: parseFloat(form.amount) });
+    onSave({
+      description: form.description,
+      amount: parseFloat(form.amount),
+      date: form.date,
+      type: form.type,
+      category: form.category,
+      currency: form.currency,
+    });
   };
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 12px',
     border: '1px solid var(--outline-variant)',
@@ -42,7 +65,7 @@ export default function EditTransactionModal({ transaction, onSave, onClose }) {
     fontFamily: 'Inter',
   };
 
-  const labelStyle = {
+  const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: 11,
     fontWeight: 600,
@@ -53,17 +76,18 @@ export default function EditTransactionModal({ transaction, onSave, onClose }) {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(19,27,46,0.4)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100,
-      padding: 16,
-    }}
-    onClick={(e) => e.target === e.currentTarget && onClose()}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(19,27,46,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: 16,
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="whisper-shadow" style={{
         background: 'white',
@@ -87,7 +111,7 @@ export default function EditTransactionModal({ transaction, onSave, onClose }) {
           <div>
             <label style={labelStyle}>Тип</label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {['expense', 'income'].map((t) => (
+              {(['expense', 'income'] as TransactionType[]).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -147,7 +171,7 @@ export default function EditTransactionModal({ transaction, onSave, onClose }) {
               <select
                 style={inputStyle}
                 value={form.currency}
-                onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value as Currency }))}
               >
                 <option value="RON">RON</option>
                 <option value="EUR">EUR</option>

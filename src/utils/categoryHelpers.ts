@@ -1,7 +1,8 @@
-import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
+import type { Category } from '../types';
+import { DEFAULT_CATEGORIES } from './defaultCategories';
 
-// Icon fallbacks per category id — covers any id that might come from the parser
-const ICON_MAP = {
+// Icon fallbacks per category id
+const ICON_MAP: Record<string, { icon: string; color: string }> = {
   income:        { icon: 'payments',       color: '#006c49' },
   salary:        { icon: 'work',           color: '#006c49' },
   food:          { icon: 'restaurant',     color: '#ea580c' },
@@ -16,14 +17,20 @@ const ICON_MAP = {
   other:         { icon: 'category',       color: '#737686' },
 };
 
-const FALLBACK = { icon: 'category', color: '#737686', name: 'Інше' };
+const FALLBACK: Category = {
+  id: 'other',
+  name: 'Інше',
+  icon: 'category',
+  color: '#737686',
+  type: 'expense',
+};
 
 /**
  * Find a category by id from the live categories list.
  * Falls back to ICON_MAP, then DEFAULT_CATEGORIES, then FALLBACK.
  * Never returns undefined.
  */
-export function resolveCategory(id, categories = []) {
+export function resolveCategory(id: string | undefined, categories: Category[] = []): Category {
   if (!id) return FALLBACK;
 
   // 1. Live Firestore categories (user may have renamed/recolored)
@@ -36,8 +43,8 @@ export function resolveCategory(id, categories = []) {
 
   // 3. Icon map only (no name)
   const mapped = ICON_MAP[id];
-  if (mapped) return { id, name: id, ...mapped };
+  if (mapped) return { id, name: id, type: 'expense', ...mapped };
 
   // 4. Hard fallback
-  return { id, name: id, ...FALLBACK };
+  return { ...FALLBACK, id, name: id };
 }
