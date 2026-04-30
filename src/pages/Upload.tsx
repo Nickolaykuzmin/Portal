@@ -4,7 +4,8 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import TopBar from '../components/TopBar';
-import type { NewTransaction, MergeResult, ParseResult } from '../types';
+import CashSplitModal from '../components/CashSplitModal';
+import type { NewTransaction, MergeResult, ParseResult, CashSplitItem } from '../types';
 
 const STEPS = ['upload', 'preview', 'done'] as const;
 type Step = typeof STEPS[number];
@@ -25,6 +26,7 @@ export default function Upload({ onMenuClick }: UploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   const [saveMode, setSaveMode] = useState<'merge' | 'all'>('merge');
+  const [cashSplitIdx, setCashSplitIdx] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File | null | undefined) => {
@@ -95,6 +97,44 @@ export default function Upload({ onMenuClick }: UploadProps) {
         idx === i ? { ...tx, type, category: autoCategory(tx.description, type) } : tx,
       ),
     }) : prev);
+  };
+
+  // Replace a cash withdrawal with split items
+  const handleCashSplit = (idx: number, items: CashSplitItem[]) => {
+    if (!parseResult) return;
+    const original = parseResult.transactions[idx];
+    if (!original) return;
+
+    const splitTxs: NewTransaction[] = items.map((item) => ({
+      date: original.date,
+      description: item.description,
+      amount: item.amount,
+      type: item.type,
+      category: item.category,
+      currency: original.currency,
+      bank: original.bank,
+      source: 'cash_split',
+    }));
+
+    // Replace the original ATM row with the split rows
+    const newTransactions = [
+      ...parseResult.transactions.slice(0, idx),
+      ...splitTxs,
+      ...parseResult.transactions.slice(idx + 1),
+    ];
+
+    // Rebuild selected: shift indices after insertion
+    const delta = splitTxs.length - 1;
+    setSelected((prev) => {
+      const before = prev.filter((i) => i < idx);
+      const after  = prev.filter((i) => i > idx).map((i) => i + delta);
+      // select all new split rows
+      const newIdxs = splitTxs.map((_, k) => idx + k);
+      return [...before, ...newIdxs, ...after];
+    });
+
+    setParseResult({ ...parseResult, transactions: newTransactions });
+    setCashSplitIdx(null);
   };
 
   return (
@@ -261,34 +301,66 @@ export default function Upload({ onMenuClick }: UploadProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {parseResult.transactions.map((tx, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--outline-variant)', opacity: selected.includes(i) ? 1 : 0.4, background: selected.includes(i) ? 'white' : 'var(--surface-container-low)' }}>
+                      {parseResult.transactions.map((tx, i) => {
+                        const isAtm = tx.isCashWithdrawal === true;
+                        return (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--outline-variant)', opacity: selected.includes(i) ? 1 : 0.4, background: isAtm ? '#fffbeb' : selected.includes(i) ? 'white' : 'var(--surface-container-low)' }}>
                           <td style={{ padding: '10px 16px' }}>
                             <input type="checkbox" checked={selected.includes(i)} onChange={() => toggleSelect(i)}
                               style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--primary)' }} />
                           </td>
                           <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 500, color: 'var(--on-surface)', maxWidth: 240 }}>
-                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {isAtm && (
+                                <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#d97706', flexShrink: 0, fontVariationSettings: "'FILL' 1" }}>
+                                  payments
+                                </span>
+                              )}
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</div>
+                            </div>
                           </td>
                           <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--on-surface-variant)' }}>{formatDate(tx.date)}</td>
                           <td style={{ padding: '10px 16px' }}>
-                            <select value={tx.type} onChange={(e) => updateType(i, e.target.value as NewTransaction['type'])}
-                              style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', fontSize: 12, fontWeight: 600, cursor: 'pointer', outline: 'none', color: tx.type === 'income' ? 'var(--secondary)' : 'var(--tertiary)', background: tx.type === 'income' ? '#dcfce7' : '#fee2e2' }}>
-                              <option value="expense">Витрата</option>
-                              <option value="income">Дохід</option>
-                            </select>
+                            {isAtm ? (
+                              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#fef3c7', color: '#92400e' }}>
+                                Готівка
+                              </span>
+                            ) : (
+                              <select value={tx.type} onChange={(e) => updateType(i, e.target.value as NewTransaction['type'])}
+                                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', fontSize: 12, fontWeight: 600, cursor: 'pointer', outline: 'none', color: tx.type === 'income' ? 'var(--secondary)' : 'var(--tertiary)', background: tx.type === 'income' ? '#dcfce7' : '#fee2e2' }}>
+                                <option value="expense">Витрата</option>
+                                <option value="income">Дохід</option>
+                              </select>
+                            )}
                           </td>
                           <td style={{ padding: '10px 16px' }}>
-                            <select value={tx.category} onChange={(e) => updateCategory(i, e.target.value)}
-                              style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', fontSize: 12, cursor: 'pointer', outline: 'none', background: 'white' }}>
-                              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                            {isAtm ? (
+                              <button
+                                onClick={() => setCashSplitIdx(i)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  padding: '5px 12px', borderRadius: 8, border: 'none',
+                                  background: '#d97706', color: 'white',
+                                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>call_split</span>
+                                Розбити
+                              </button>
+                            ) : (
+                              <select value={tx.category} onChange={(e) => updateCategory(i, e.target.value)}
+                                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', fontSize: 12, cursor: 'pointer', outline: 'none', background: 'white' }}>
+                                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                              </select>
+                            )}
                           </td>
                           <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: 14, fontWeight: 700, color: tx.type === 'income' ? 'var(--secondary)' : 'var(--on-surface)' }}>
                             {tx.type === 'income' ? '+' : '−'}{formatCurrency(tx.amount, tx.currency)}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -372,6 +444,21 @@ export default function Upload({ onMenuClick }: UploadProps) {
           </div>
         )}
       </div>
+
+      {/* Cash split modal */}
+      {cashSplitIdx !== null && parseResult && (() => {
+        const tx = parseResult.transactions[cashSplitIdx];
+        if (!tx) return null;
+        return (
+          <CashSplitModal
+            totalAmount={tx.amount}
+            currency={tx.currency}
+            date={tx.date}
+            onSave={(items) => handleCashSplit(cashSplitIdx, items)}
+            onClose={() => setCashSplitIdx(null)}
+          />
+        );
+      })()}
     </>
   );
 }

@@ -14,11 +14,21 @@ export interface Transaction {
   bank?: string;
   source?: string;
   bankBalance?: number;
+  isCashWithdrawal?: boolean;   // true = ATM withdrawal, needs split
   createdAt?: unknown;    // Firestore ServerTimestamp
 }
 
 /** Transaction without the Firestore `id` — used when creating */
 export type NewTransaction = Omit<Transaction, 'id' | 'createdAt'>;
+
+// ─── Cash split ───────────────────────────────────────────────────────────────
+
+export interface CashSplitItem {
+  description: string;
+  amount: number;
+  category: string;
+  type: TransactionType;
+}
 
 export interface Category {
   id: string;

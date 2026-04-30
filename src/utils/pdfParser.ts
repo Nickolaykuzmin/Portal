@@ -209,6 +209,7 @@ function parseBT(pages: PdfPage[]): NewTransaction[] {
 
       const type = block.credit ? 'income' : 'expense';
       const description = buildDescription(fullDesc, type);
+      const isCashWithdrawal = /Retragere de numerar/i.test(fullDesc);
 
       transactions.push({
         date: block.date ?? '',
@@ -219,6 +220,7 @@ function parseBT(pages: PdfPage[]): NewTransaction[] {
         bank: 'BT',
         currency: 'RON',
         source: 'pdf',
+        ...(isCashWithdrawal && { isCashWithdrawal: true }),
       });
     }
   }
