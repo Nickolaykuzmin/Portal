@@ -27,7 +27,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         onClick={onClose}
         style={{
           display: 'none',
-          position: 'fixed', inset: 0,
+          inset: 0,
           background: 'rgba(19,27,46,0.4)',
           zIndex: 99,
           backdropFilter: 'blur(2px)',

@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Legend,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../hooks/useTransactions';
@@ -254,6 +253,3 @@ export default function Overview({ onMenuClick }: OverviewProps) {
     </>
   );
 }
-
-// Suppress unused import warnings for recharts (used in JSX)
-void LineChart; void Line; void XAxis; void YAxis; void CartesianGrid; void Tooltip; void ResponsiveContainer; void Legend;
