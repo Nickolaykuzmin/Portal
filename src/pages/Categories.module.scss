@@ -1,0 +1,336 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.page {
+  padding: v.$page-padding-top v.$page-padding-h v.$page-padding-h;
+  max-width: 1000px;
+  margin: 0 auto;
+
+  @include m.md {
+    padding: 72px v.$page-padding-h-sm 24px;
+  }
+}
+
+// ── Page header ───────────────────────────────────────────────────────────────
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.filterBtn {
+  @include m.pill-button;
+  border-color: var(--outline-variant);
+  background: white;
+  color: var(--on-surface-variant);
+
+  &.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+  }
+}
+
+.newBtn {
+  @include m.action-btn;
+  padding: 10px 20px;
+
+  .icon { font-size: 18px; }
+}
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+.loading {
+  color: var(--on-surface-variant);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+
+  @include m.sm {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.catCard {
+  @include m.card;
+  border-radius: v.$radius-xl;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.catIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background set inline
+
+  .icon { font-size: 22px; /* color set inline */ }
+}
+
+.catCardActions {
+  display: flex;
+  gap: 4px;
+}
+
+.editBtn,
+.deleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  transition: background 0.12s;
+
+  .icon { font-size: 16px; }
+}
+
+.editBtn {
+  &:hover { background: var(--surface-container); }
+  .icon { color: var(--outline); }
+}
+
+.deleteBtn {
+  &:hover { background: var(--error-container); }
+  .icon { color: var(--error); }
+}
+
+.catName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.catMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.typeBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &.income  { background: #dcfce7; color: var(--secondary); }
+  &.expense { background: #fee2e2; color: var(--tertiary); }
+}
+
+.defaultLabel {
+  font-size: 10px;
+  color: var(--outline);
+  font-weight: 500;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+.overlay {
+  @include m.modal-overlay;
+}
+
+.modal {
+  @include m.card;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h2 {
+    margin: 0;
+    font-family: v.$font-display;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  .icon { color: var(--outline); }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface-container-low);
+  border-radius: 12px;
+}
+
+.previewIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background set inline
+
+  .icon { font-size: 22px; /* color set inline */ }
+}
+
+.previewName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.previewType {
+  font-size: 12px;
+  color: var(--outline);
+}
+
+.fieldLabel {
+  @include m.label-uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.input,
+.select {
+  @include m.form-input;
+}
+
+.typeToggle {
+  display: flex;
+  gap: 8px;
+}
+
+.typeBtn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.income  { border-color: var(--secondary); background: #dcfce7; color: var(--secondary); }
+  &.expense { border-color: var(--tertiary);  background: #fee2e2; color: var(--tertiary); }
+}
+
+.iconGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s;
+
+  &.active {
+    // border-color + background set inline (dynamic color)
+  }
+
+  .icon { font-size: 16px; color: var(--outline); }
+  &.active .icon { /* color set inline */ }
+}
+
+.colorGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.colorBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.12s;
+  // background set inline
+
+  &.active {
+    border-color: var(--on-surface);
+    border-width: 3px;
+  }
+}
+
+.colorInput {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.formFooter {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}

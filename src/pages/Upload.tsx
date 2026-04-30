@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 import TopBar from '../components/TopBar';
 import CashSplitModal from '../components/CashSplitModal';
 import type { NewTransaction, MergeResult, ParseResult, CashSplitItem } from '../types';
+import s from './Upload.module.scss';
 
 const STEPS = ['upload', 'preview', 'done'] as const;
 type Step = typeof STEPS[number];
@@ -82,24 +83,31 @@ export default function Upload({ onMenuClick }: UploadProps) {
   };
 
   const updateCategory = (i: number, catId: string) => {
-    setParseResult((prev) => prev ? ({
-      ...prev,
-      transactions: prev.transactions.map((tx, idx) =>
-        idx === i ? { ...tx, category: catId } : tx,
-      ),
-    }) : prev);
+    setParseResult((prev) =>
+      prev
+        ? {
+            ...prev,
+            transactions: prev.transactions.map((tx, idx) =>
+              idx === i ? { ...tx, category: catId } : tx,
+            ),
+          }
+        : prev,
+    );
   };
 
   const updateType = (i: number, type: NewTransaction['type']) => {
-    setParseResult((prev) => prev ? ({
-      ...prev,
-      transactions: prev.transactions.map((tx, idx) =>
-        idx === i ? { ...tx, type, category: autoCategory(tx.description, type) } : tx,
-      ),
-    }) : prev);
+    setParseResult((prev) =>
+      prev
+        ? {
+            ...prev,
+            transactions: prev.transactions.map((tx, idx) =>
+              idx === i ? { ...tx, type, category: autoCategory(tx.description, type) } : tx,
+            ),
+          }
+        : prev,
+    );
   };
 
-  // Replace a cash withdrawal with split items
   const handleCashSplit = (idx: number, items: CashSplitItem[]) => {
     if (!parseResult) return;
     const original = parseResult.transactions[idx];
@@ -116,19 +124,16 @@ export default function Upload({ onMenuClick }: UploadProps) {
       source: 'cash_split',
     }));
 
-    // Replace the original ATM row with the split rows
     const newTransactions = [
       ...parseResult.transactions.slice(0, idx),
       ...splitTxs,
       ...parseResult.transactions.slice(idx + 1),
     ];
 
-    // Rebuild selected: shift indices after insertion
     const delta = splitTxs.length - 1;
     setSelected((prev) => {
       const before = prev.filter((i) => i < idx);
-      const after  = prev.filter((i) => i > idx).map((i) => i + delta);
-      // select all new split rows
+      const after = prev.filter((i) => i > idx).map((i) => i + delta);
       const newIdxs = splitTxs.map((_, k) => idx + k);
       return [...before, ...newIdxs, ...after];
     });
@@ -140,40 +145,48 @@ export default function Upload({ onMenuClick }: UploadProps) {
   return (
     <>
       <TopBar title="Завантажити Statement" onMenuClick={onMenuClick} />
-      <div style={{ padding: '80px 32px 32px', maxWidth: 900, margin: '0 auto' }}>
+      <div className={s.page}>
 
         {/* Step indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
+        <div className={s.steps}>
           {[
             { key: 'upload',  label: '1. Файл' },
             { key: 'preview', label: '2. Перегляд' },
             { key: 'done',    label: '3. Готово' },
-          ].map((s, i) => (
-            <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%',
-                background: step === s.key ? 'var(--primary)' :
-                  STEPS.indexOf(step as Step) > i ? 'var(--secondary)' : 'var(--surface-container)',
-                color: STEPS.indexOf(step as Step) >= i ? 'white' : 'var(--on-surface-variant)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 700,
-              }}>
-                {STEPS.indexOf(step as Step) > i
-                  ? <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check</span>
-                  : i + 1}
+          ].map((step_item, i) => {
+            const stepIdx = STEPS.indexOf(step as Step);
+            const isDone   = stepIdx > i;
+            const isActive = step === step_item.key;
+            return (
+              <div key={step_item.key} className={s.stepItem}>
+                <div
+                  className={s.stepCircle}
+                  style={{
+                    background: isActive
+                      ? 'var(--primary)'
+                      : isDone
+                      ? 'var(--secondary)'
+                      : 'var(--surface-container)',
+                    color: stepIdx >= i ? 'white' : 'var(--on-surface-variant)',
+                  }}
+                >
+                  {isDone
+                    ? <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check</span>
+                    : i + 1}
+                </div>
+                <span
+                  className={s.stepLabel}
+                  style={{ color: isActive ? 'var(--primary)' : 'var(--on-surface-variant)' }}
+                >
+                  {step_item.label}
+                </span>
+                {i < 2 && <span className={s.stepArrow}>→</span>}
               </div>
-              <span style={{
-                fontSize: 13, fontWeight: 600,
-                color: step === s.key ? 'var(--primary)' : 'var(--on-surface-variant)',
-              }}>
-                {s.label}
-              </span>
-              {i < 2 && <span style={{ color: 'var(--outline-variant)', margin: '0 4px' }}>→</span>}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* STEP 1: Upload */}
+        {/* ── STEP 1: Upload ── */}
         {step === 'upload' && (
           <div>
             <div
@@ -181,15 +194,7 @@ export default function Upload({ onMenuClick }: UploadProps) {
               onDragLeave={() => setDragging(false)}
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
-              style={{
-                border: `2px dashed ${dragging ? 'var(--primary)' : 'var(--outline-variant)'}`,
-                borderRadius: 20,
-                padding: '60px 40px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                background: dragging ? 'var(--surface-container-low)' : 'white',
-                transition: 'all 0.2s',
-              }}
+              className={`${s.dropZone}${dragging ? ` ${s.dragging}` : ''}`}
             >
               <input
                 ref={fileRef}
@@ -200,25 +205,18 @@ export default function Upload({ onMenuClick }: UploadProps) {
               />
               {parsing ? (
                 <div>
-                  <span className="material-symbols-outlined" style={{ fontSize: 56, color: 'var(--primary)', display: 'block', marginBottom: 16 }}>hourglass_top</span>
-                  <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--on-surface)', margin: '0 0 8px' }}>Обробка PDF...</p>
-                  <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', margin: 0 }}>Витягуємо транзакції з документу</p>
+                  <span className={`material-symbols-outlined ${s.dropIcon}`}>hourglass_top</span>
+                  <p className={s.dropTitle}>Обробка PDF...</p>
+                  <p className={s.dropSub}>Витягуємо транзакції з документу</p>
                 </div>
               ) : (
                 <div>
-                  <span className="material-symbols-outlined" style={{ fontSize: 56, color: 'var(--primary)', display: 'block', marginBottom: 16 }}>upload_file</span>
-                  <p style={{ fontSize: 18, fontWeight: 600, color: 'var(--on-surface)', margin: '0 0 8px' }}>
-                    Перетягніть PDF або натисніть для вибору
-                  </p>
-                  <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', margin: '0 0 24px' }}>
+                  <span className={`material-symbols-outlined ${s.dropIcon}`}>upload_file</span>
+                  <p className={s.dropTitle}>Перетягніть PDF або натисніть для вибору</p>
+                  <p className={s.dropSub}>
                     Підтримуються виписки BCR, BRD, ING, Raiffeisen, Banca Transilvania
                   </p>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    padding: '12px 24px', borderRadius: 12,
-                    background: 'var(--primary)', color: 'white',
-                    fontWeight: 600, fontSize: 14,
-                  }}>
+                  <div className={s.chooseBtn}>
                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>folder_open</span>
                     Вибрати файл
                   </div>
@@ -226,21 +224,15 @@ export default function Upload({ onMenuClick }: UploadProps) {
               )}
             </div>
 
-            {error && (
-              <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10, background: 'var(--error-container)', color: 'var(--error)', fontSize: 14, fontWeight: 500 }}>
-                ⚠️ {error}
-              </div>
-            )}
+            {error && <div className={s.error}>⚠️ {error}</div>}
 
-            <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, padding: 24, marginTop: 24 }}>
-              <h3 style={{ margin: '0 0 16px', fontFamily: 'Manrope', fontSize: 16, fontWeight: 700, color: 'var(--on-surface)' }}>
-                Підтримувані банки Румунії
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div className={`whisper-shadow ${s.banksCard}`}>
+              <h3>Підтримувані банки Румунії</h3>
+              <div className={s.banksGrid}>
                 {['BCR', 'BRD', 'ING Bank', 'Raiffeisen', 'Banca Transilvania', 'UniCredit'].map((bank) => (
-                  <div key={bank} style={{ padding: '10px 14px', borderRadius: 10, background: 'var(--surface-container-low)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--primary)' }}>account_balance</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-surface)' }}>{bank}</span>
+                  <div key={bank} className={s.bankItem}>
+                    <span className={`material-symbols-outlined ${s.icon}`}>account_balance</span>
+                    <span>{bank}</span>
                   </div>
                 ))}
               </div>
@@ -248,155 +240,182 @@ export default function Upload({ onMenuClick }: UploadProps) {
           </div>
         )}
 
-        {/* STEP 2: Preview */}
+        {/* ── STEP 2: Preview ── */}
         {step === 'preview' && parseResult && (
           <div>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: 'white', borderRadius: 12, padding: '14px 20px',
-              border: '1px solid var(--outline-variant)', marginBottom: 20,
-            }}>
-              <div style={{ display: 'flex', gap: 24 }}>
+            <div className={s.previewBar}>
+              <div className={s.previewStats}>
                 {[
-                  { label: 'Банк',    value: parseResult.bank },
+                  { label: 'Банк',     value: parseResult.bank },
                   { label: 'Знайдено', value: `${parseResult.transactions.length} транзакцій` },
-                  { label: 'Вибрано', value: String(selected.length) },
+                  { label: 'Вибрано',  value: String(selected.length) },
                 ].map(({ label, value }) => (
-                  <div key={label}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--on-surface)' }}>{value}</div>
+                  <div key={label} className={s.previewStat}>
+                    <div className={s.statLabel}>{label}</div>
+                    <div className={s.statValue}>{value}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setSelected(parseResult.transactions.map((_, i) => i))}
-                  style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--outline-variant)', background: 'white', color: 'var(--on-surface)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              <div className={s.previewActions}>
+                <button
+                  onClick={() => setSelected(parseResult.transactions.map((_, i) => i))}
+                  className={s.outlineBtn}
+                >
                   Вибрати всі
                 </button>
-                <button onClick={() => setSelected([])}
-                  style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--outline-variant)', background: 'white', color: 'var(--on-surface)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => setSelected([])} className={s.outlineBtn}>
                   Зняти всі
                 </button>
               </div>
             </div>
 
             {parseResult.transactions.length === 0 ? (
-              <div style={{ background: 'white', borderRadius: 16, padding: 48, textAlign: 'center', border: '1px solid var(--outline-variant)' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--outline-variant)', display: 'block', marginBottom: 12 }}>search_off</span>
-                <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--on-surface)', margin: '0 0 8px' }}>Транзакції не знайдено</p>
-                <button onClick={() => setStep('upload')}
-                  style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 600, cursor: 'pointer' }}>
-                  Спробувати інший файл
-                </button>
+              <div className={s.emptyState}>
+                <span className={`material-symbols-outlined ${s.icon}`}>search_off</span>
+                <p>Транзакції не знайдено</p>
+                <button onClick={() => setStep('upload')}>Спробувати інший файл</button>
               </div>
             ) : (
               <>
-                <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--surface-container-low)', borderBottom: '1px solid var(--outline-variant)' }}>
+                <div className={`whisper-shadow ${s.tableWrap}`}>
+                  <table className={s.table}>
+                    <thead className={s.thead}>
+                      <tr>
                         {['', 'Опис', 'Дата', 'Тип', 'Категорія', 'Сума'].map((h, i) => (
-                          <th key={i} style={{ padding: '10px 16px', textAlign: h === 'Сума' ? 'right' : 'left', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--on-surface-variant)' }}>{h}</th>
+                          <th key={i} className={`${s.th}${h === 'Сума' ? ` ${s.right}` : ''}`}>
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {parseResult.transactions.map((tx, i) => {
                         const isAtm = tx.isCashWithdrawal === true;
+                        const isSelected = selected.includes(i);
                         return (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--outline-variant)', opacity: selected.includes(i) ? 1 : 0.4, background: isAtm ? '#fffbeb' : selected.includes(i) ? 'white' : 'var(--surface-container-low)' }}>
-                          <td style={{ padding: '10px 16px' }}>
-                            <input type="checkbox" checked={selected.includes(i)} onChange={() => toggleSelect(i)}
-                              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--primary)' }} />
-                          </td>
-                          <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 500, color: 'var(--on-surface)', maxWidth: 240 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              {isAtm && (
-                                <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#d97706', flexShrink: 0, fontVariationSettings: "'FILL' 1" }}>
-                                  payments
-                                </span>
+                          <tr
+                            key={i}
+                            className={`${s.tr} ${
+                              isAtm
+                                ? s.atm
+                                : isSelected
+                                ? s.selected
+                                : s.unselected
+                            }${!isSelected ? ` ${s.deselected}` : ''}`}
+                          >
+                            <td className={s.td}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelect(i)}
+                                style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                              />
+                            </td>
+                            <td className={s.td}>
+                              <div className={s.descCell}>
+                                {isAtm && (
+                                  <span className={`material-symbols-outlined ${s.atmIcon}`}>
+                                    payments
+                                  </span>
+                                )}
+                                <div className={s.descText}>{tx.description}</div>
+                              </div>
+                            </td>
+                            <td className={s.td}>
+                              <span className={s.dateText}>{formatDate(tx.date)}</span>
+                            </td>
+                            <td className={s.td}>
+                              {isAtm ? (
+                                <span className={s.cashBadge}>Готівка</span>
+                              ) : (
+                                <select
+                                  value={tx.type}
+                                  onChange={(e) => updateType(i, e.target.value as NewTransaction['type'])}
+                                  className={`${s.typeSelect} ${tx.type === 'income' ? s.income : s.expense}`}
+                                >
+                                  <option value="expense">Витрата</option>
+                                  <option value="income">Дохід</option>
+                                </select>
                               )}
-                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--on-surface-variant)' }}>{formatDate(tx.date)}</td>
-                          <td style={{ padding: '10px 16px' }}>
-                            {isAtm ? (
-                              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#fef3c7', color: '#92400e' }}>
-                                Готівка
-                              </span>
-                            ) : (
-                              <select value={tx.type} onChange={(e) => updateType(i, e.target.value as NewTransaction['type'])}
-                                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', fontSize: 12, fontWeight: 600, cursor: 'pointer', outline: 'none', color: tx.type === 'income' ? 'var(--secondary)' : 'var(--tertiary)', background: tx.type === 'income' ? '#dcfce7' : '#fee2e2' }}>
-                                <option value="expense">Витрата</option>
-                                <option value="income">Дохід</option>
-                              </select>
-                            )}
-                          </td>
-                          <td style={{ padding: '10px 16px' }}>
-                            {isAtm ? (
-                              <button
-                                onClick={() => setCashSplitIdx(i)}
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                                  padding: '5px 12px', borderRadius: 8, border: 'none',
-                                  background: '#d97706', color: 'white',
-                                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>call_split</span>
-                                Розбити
-                              </button>
-                            ) : (
-                              <select value={tx.category} onChange={(e) => updateCategory(i, e.target.value)}
-                                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', fontSize: 12, cursor: 'pointer', outline: 'none', background: 'white' }}>
-                                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                              </select>
-                            )}
-                          </td>
-                          <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: 14, fontWeight: 700, color: tx.type === 'income' ? 'var(--secondary)' : 'var(--on-surface)' }}>
-                            {tx.type === 'income' ? '+' : '−'}{formatCurrency(tx.amount, tx.currency)}
-                          </td>
-                        </tr>
+                            </td>
+                            <td className={s.td}>
+                              {isAtm ? (
+                                <button
+                                  onClick={() => setCashSplitIdx(i)}
+                                  className={s.splitBtn}
+                                >
+                                  <span className={`material-symbols-outlined ${s.icon}`}>call_split</span>
+                                  Розбити
+                                </button>
+                              ) : (
+                                <select
+                                  value={tx.category}
+                                  onChange={(e) => updateCategory(i, e.target.value)}
+                                  className={s.categorySelect}
+                                >
+                                  {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </td>
+                            <td className={`${s.td} ${s.amountCell} ${tx.type === 'income' ? s.income : s.expense}`}>
+                              {tx.type === 'income' ? '+' : '−'}{formatCurrency(tx.amount, tx.currency)}
+                            </td>
+                          </tr>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
 
-                {error && (
-                  <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10, background: 'var(--error-container)', color: 'var(--error)', fontSize: 14 }}>⚠️ {error}</div>
-                )}
+                {error && <div className={s.error} style={{ marginBottom: 16 }}>⚠️ {error}</div>}
 
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface-container-low)', borderRadius: 10, padding: '8px 14px', border: '1px solid var(--outline-variant)' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--outline)' }}>info</span>
-                    <span style={{ fontSize: 12, color: 'var(--on-surface-variant)', fontWeight: 500 }}>Режим:</span>
+                <div className={s.saveBar}>
+                  <div className={s.modeBar}>
+                    <span className={`material-symbols-outlined ${s.infoIcon}`}>info</span>
+                    <span className={s.modeLabel}>Режим:</span>
                     {([
                       { key: 'merge' as const, label: 'Оновити (без дублів)', icon: 'merge' },
                       { key: 'all'   as const, label: 'Додати всі',           icon: 'add_circle' },
                     ]).map((m) => (
-                      <button key={m.key} onClick={() => setSaveMode(m.key)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: '1px solid', borderColor: saveMode === m.key ? 'var(--primary)' : 'var(--outline-variant)', background: saveMode === m.key ? 'var(--primary)' : 'white', color: saveMode === m.key ? 'white' : 'var(--on-surface-variant)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{m.icon}</span>
+                      <button
+                        key={m.key}
+                        onClick={() => setSaveMode(m.key)}
+                        className={`${s.modeBtn}${saveMode === m.key ? ` ${s.active}` : ''}`}
+                      >
+                        <span className={`material-symbols-outlined ${s.icon}`}>{m.icon}</span>
                         {m.label}
                       </button>
                     ))}
                   </div>
 
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button onClick={() => { setStep('upload'); setParseResult(null); }}
-                      style={{ padding: '12px 24px', borderRadius: 12, border: '1px solid var(--outline-variant)', background: 'white', color: 'var(--on-surface)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                  <div className={s.saveActions}>
+                    <button
+                      onClick={() => { setStep('upload'); setParseResult(null); }}
+                      className={s.backBtn}
+                    >
                       ← Назад
                     </button>
-                    <button onClick={handleSave} disabled={saving || selected.length === 0}
-                      style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: selected.length === 0 ? 'var(--outline-variant)' : 'var(--primary)', color: 'white', fontWeight: 600, fontSize: 14, cursor: selected.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving || selected.length === 0}
+                      className={s.saveBtn}
+                    >
                       {saving ? (
-                        <><span className="material-symbols-outlined" style={{ fontSize: 18 }}>hourglass_top</span>Збереження...</>
+                        <>
+                          <span className={`material-symbols-outlined ${s.icon}`}>hourglass_top</span>
+                          Збереження...
+                        </>
                       ) : (
-                        <><span className="material-symbols-outlined" style={{ fontSize: 18 }}>{saveMode === 'merge' ? 'merge' : 'save'}</span>
-                          {saveMode === 'merge' ? `Оновити (${selected.length})` : `Зберегти ${selected.length}`}</>
+                        <>
+                          <span className={`material-symbols-outlined ${s.icon}`}>
+                            {saveMode === 'merge' ? 'merge' : 'save'}
+                          </span>
+                          {saveMode === 'merge'
+                            ? `Оновити (${selected.length})`
+                            : `Зберегти ${selected.length}`}
+                        </>
                       )}
                     </button>
                   </div>
@@ -406,38 +425,48 @@ export default function Upload({ onMenuClick }: UploadProps) {
           </div>
         )}
 
-        {/* STEP 3: Done */}
+        {/* ── STEP 3: Done ── */}
         {step === 'done' && (
-          <div style={{ textAlign: 'center', padding: '60px 40px' }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--secondary)', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          <div className={s.doneWrap}>
+            <div className={s.doneIcon}>
+              <span className={`material-symbols-outlined ${s.icon}`}>check_circle</span>
             </div>
-            <h2 style={{ fontFamily: 'Manrope', fontSize: 24, fontWeight: 700, color: 'var(--on-surface)', margin: '0 0 12px' }}>Успішно збережено!</h2>
+            <h2 className={s.doneTitle}>Успішно збережено!</h2>
 
             {mergeResult && (
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', margin: '0 0 24px' }}>
-                <div style={{ padding: '14px 24px', borderRadius: 12, background: '#dcfce7', border: '1px solid #bbf7d0' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--secondary)', fontFamily: 'Manrope' }}>+{mergeResult.added}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', marginTop: 2 }}>нових додано</div>
+              <div className={s.mergeStats}>
+                <div className={`${s.mergeStat} ${s.added}`}>
+                  <div className={s.count}>+{mergeResult.added}</div>
+                  <div className={s.label}>нових додано</div>
                 </div>
                 {mergeResult.skipped > 0 && (
-                  <div style={{ padding: '14px 24px', borderRadius: 12, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--outline)', fontFamily: 'Manrope' }}>{mergeResult.skipped}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', marginTop: 2 }}>вже існували</div>
+                  <div className={`${s.mergeStat} ${s.skipped}`}>
+                    <div className={s.count}>{mergeResult.skipped}</div>
+                    <div className={s.label}>вже існували</div>
                   </div>
                 )}
               </div>
             )}
 
-            <p style={{ fontSize: 15, color: 'var(--on-surface-variant)', margin: '0 0 32px' }}>
-              {mergeResult?.skipped ? `${mergeResult.skipped} транзакцій пропущено — вони вже були в базі` : 'Всі транзакції успішно додано'}
+            <p className={s.doneSub}>
+              {mergeResult?.skipped
+                ? `${mergeResult.skipped} транзакцій пропущено — вони вже були в базі`
+                : 'Всі транзакції успішно додано'}
             </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button onClick={() => { setStep('upload'); setParseResult(null); setSelected([]); setMergeResult(null); }}
-                style={{ padding: '12px 24px', borderRadius: 12, border: '1px solid var(--outline-variant)', background: 'white', color: 'var(--on-surface)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+
+            <div className={s.doneActions}>
+              <button
+                onClick={() => {
+                  setStep('upload');
+                  setParseResult(null);
+                  setSelected([]);
+                  setMergeResult(null);
+                }}
+                className={s.doneBackBtn}
+              >
                 Завантажити ще
               </button>
-              <a href="/transactions" style={{ padding: '12px 24px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 600, fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+              <a href="/transactions" className={s.doneLinkBtn}>
                 Переглянути транзакції →
               </a>
             </div>

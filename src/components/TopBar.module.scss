@@ -1,0 +1,125 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 240px;
+  height: 64px;
+  background: rgba(250, 248, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--outline-variant);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 40;
+
+  @include m.md {
+    left: 0;
+  }
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menuBtn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+
+  @include m.md {
+    display: flex;
+  }
+
+  .icon {
+    font-size: 24px;
+    color: var(--on-surface);
+  }
+}
+
+.title {
+  margin: 0;
+  font-family: v.$font-display;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.3px;
+
+  @include m.md {
+    font-size: 16px;
+  }
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// ── Currency toggle ───────────────────────────────────────────────────────────
+.currencyToggle {
+  display: flex;
+  background: var(--surface-container);
+  border-radius: 20px;
+  padding: 3px;
+  border: 1px solid var(--outline-variant);
+}
+
+.currencyBtn {
+  padding: 5px 14px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transition: all 0.18s ease;
+  background: transparent;
+  color: var(--on-surface-variant);
+  box-shadow: none;
+
+  &.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 74, 198, 0.25);
+  }
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+.searchWrap {
+  position: relative;
+
+  @include m.md {
+    display: none;
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--outline);
+}
+
+.searchInput {
+  background: white;
+  border: 1px solid var(--outline-variant);
+  border-radius: 20px;
+  padding: 7px 16px 7px 34px;
+  font-size: 14px;
+  color: var(--on-surface);
+  outline: none;
+  width: 240px;
+}

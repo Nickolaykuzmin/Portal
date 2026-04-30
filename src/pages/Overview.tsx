@@ -11,6 +11,7 @@ import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';
 import TopBar from '../components/TopBar';
 import type { Currency } from '../types';
+import s from './Overview.module.scss';
 
 interface OverviewProps {
   onMenuClick?: () => void;
@@ -55,8 +56,8 @@ export default function Overview({ onMenuClick }: OverviewProps) {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-6)
       .map(([month, txs]) => {
-        const income  = txs.filter((t) => t.type === 'income').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
-        const expense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+        const income  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+        const expense = txs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
         return {
           month: new Date(month + '-01').toLocaleDateString('uk-UA', { month: 'short' }),
           Дохід: Math.round(income),
@@ -78,9 +79,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
     return (
       <>
         <TopBar title="Огляд" onMenuClick={onMenuClick} />
-        <div style={{ padding: '80px 32px 32px', textAlign: 'center', color: 'var(--on-surface-variant)' }}>
-          Завантаження...
-        </div>
+        <div className={s.loading}>Завантаження...</div>
       </>
     );
   }
@@ -88,10 +87,10 @@ export default function Overview({ onMenuClick }: OverviewProps) {
   return (
     <>
       <TopBar title="Огляд" onMenuClick={onMenuClick} />
-      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }} className="page-content">
+      <div className={`page-content ${s.page}`}>
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }} className="stats-grid">
+        <div className={s.statsGrid}>
           <StatCard
             label="Баланс рахунку"
             value={fmt(bankBalance)}
@@ -101,7 +100,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
           <StatCard
             label="Дохід цього місяця"
             value={fmt(convertAmount(
-              currentMonthTxs.filter((t) => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0),
+              currentMonthTxs.filter((t) => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0),
               'RON',
             ))}
             icon="trending_up"
@@ -110,7 +109,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
           <StatCard
             label="Витрати цього місяця"
             value={fmt(convertAmount(
-              currentMonthTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + (t.amount || 0), 0),
+              currentMonthTxs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0),
               'RON',
             ))}
             icon="trending_down"
@@ -125,22 +124,22 @@ export default function Overview({ onMenuClick }: OverviewProps) {
         </div>
 
         {/* Charts row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 24 }} className="charts-grid">
+        <div className={s.chartsGrid}>
           {/* Bar chart */}
-          <div className="whisper-shadow" style={{
-            background: 'white', borderRadius: 20, padding: 28,
-            border: '1px solid var(--outline-variant)',
-          }}>
-            <h2 style={{ margin: '0 0 20px', fontFamily: 'Manrope', fontSize: 17, fontWeight: 700, color: 'var(--on-surface)' }}>
-              Останні 6 місяців
-            </h2>
+          <div className={`whisper-shadow ${s.chartCard}`}>
+            <h2>Останні 6 місяців</h2>
             {monthlyChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={monthlyChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={60}
-                    tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={60}
+                    tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                  />
                   <Tooltip
                     contentStyle={{ borderRadius: 12, border: '1px solid var(--outline-variant)', fontSize: 13 }}
                     formatter={(v) => fmt(v as number)}
@@ -151,39 +150,34 @@ export default function Overview({ onMenuClick }: OverviewProps) {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--on-surface-variant)' }}>
-                Немає даних
-              </div>
+              <div className={s.chartEmpty}>Немає даних</div>
             )}
           </div>
 
           {/* Top categories */}
-          <div className="whisper-shadow" style={{
-            background: 'white', borderRadius: 20, padding: 24,
-            border: '1px solid var(--outline-variant)',
-          }}>
-            <h2 style={{ margin: '0 0 16px', fontFamily: 'Manrope', fontSize: 17, fontWeight: 700, color: 'var(--on-surface)' }}>
-              Топ витрат цього місяця
-            </h2>
+          <div className={`whisper-shadow ${s.topCatCard}`}>
+            <h2>Топ витрат цього місяця</h2>
             {topCategories.length === 0 ? (
-              <p style={{ color: 'var(--on-surface-variant)', fontSize: 13 }}>Немає витрат цього місяця</p>
+              <p className={s.topCatEmpty}>Немає витрат цього місяця</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className={s.topCatList}>
                 {topCategories.map((cat) => (
-                  <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                      background: (cat.color || '#737686') + '20',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 15, color: cat.color || '#737686', fontVariationSettings: "'FILL' 1" }}>
+                  <div key={cat.id} className={s.topCatItem}>
+                    <div
+                      className={s.catIcon}
+                      style={{ background: (cat.color || '#737686') + '20' }}
+                    >
+                      <span
+                        className={`material-symbols-outlined ${s.icon}`}
+                        style={{ color: cat.color || '#737686' }}
+                      >
                         {cat.icon || 'category'}
                       </span>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface)' }}>{cat.name}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface)' }}>{fmt(cat.amount)}</span>
+                    <div className={s.catInfo}>
+                      <div className={s.catRow}>
+                        <span className={s.name}>{cat.name}</span>
+                        <span className={s.value}>{fmt(cat.amount)}</span>
                       </div>
                     </div>
                   </div>
@@ -194,52 +188,47 @@ export default function Overview({ onMenuClick }: OverviewProps) {
         </div>
 
         {/* Recent transactions */}
-        <div className="whisper-shadow" style={{
-          background: 'white', borderRadius: 20,
-          border: '1px solid var(--outline-variant)', overflow: 'hidden',
-        }}>
-          <div style={{ padding: '20px 24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0, fontFamily: 'Manrope', fontSize: 17, fontWeight: 700, color: 'var(--on-surface)' }}>
-              Останні транзакції
-            </h2>
-            <Link to="/transactions" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
-              Всі →
-            </Link>
+        <div className={`whisper-shadow ${s.recentCard}`}>
+          <div className={s.recentHeader}>
+            <h2>Останні транзакції</h2>
+            <Link to="/transactions">Всі →</Link>
           </div>
           {recentTxs.length === 0 ? (
-            <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--on-surface-variant)' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--outline-variant)', display: 'block', marginBottom: 8 }}>receipt_long</span>
-              <p style={{ margin: 0, fontSize: 13 }}>Немає транзакцій. <Link to="/upload" style={{ color: 'var(--primary)' }}>Завантажте PDF</Link></p>
+            <div className={s.recentEmpty}>
+              <span className={`material-symbols-outlined ${s.icon}`}>receipt_long</span>
+              <p>
+                Немає транзакцій.{' '}
+                <Link to="/upload">Завантажте PDF</Link>
+              </p>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className={s.recentTable}>
               <tbody>
                 {recentTxs.map((tx) => {
                   const cat = resolveCategory(tx.category, categories);
                   const amt = convertAmount(tx.amount || 0, tx.currency || 'RON');
                   return (
-                    <tr key={tx.id} style={{ borderTop: '1px solid var(--outline-variant)' }}>
-                      <td style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{
-                            width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-                            background: (cat.color || '#737686') + '15',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: cat.color || '#737686', fontVariationSettings: "'FILL' 1" }}>
+                    <tr key={tx.id} className={s.recentRow}>
+                      <td className={s.recentTd}>
+                        <div className={s.recentDesc}>
+                          <div
+                            className={s.recentIcon}
+                            style={{ background: (cat.color || '#737686') + '15' }}
+                          >
+                            <span
+                              className={`material-symbols-outlined ${s.icon}`}
+                              style={{ color: cat.color || '#737686' }}
+                            >
                               {cat.icon || 'category'}
                             </span>
                           </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--on-surface)' }}>
-                              {tx.description?.slice(0, 40) || '—'}
-                            </div>
-                            <div style={{ fontSize: 11, color: 'var(--outline)' }}>{formatDate(tx.date)}</div>
+                          <div className={s.recentInfo}>
+                            <div className={s.name}>{tx.description?.slice(0, 40) || '—'}</div>
+                            <div className={s.date}>{formatDate(tx.date)}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 700,
-                        color: tx.type === 'income' ? 'var(--secondary)' : 'var(--on-surface)' }}>
+                      <td className={`${s.recentAmount} ${tx.type === 'income' ? s.income : s.expense}`}>
                         {tx.type === 'income' ? '+' : '−'}{fmt(amt)}
                       </td>
                     </tr>

@@ -1,0 +1,44 @@
+// ── Design tokens (mirrors CSS custom properties in index.css) ──────────────
+// Use these in SCSS when you need compile-time values (e.g. in calc, maps).
+// At runtime the CSS vars are preferred so theming still works.
+
+$primary:                  var(--primary);
+$secondary:                var(--secondary);
+$tertiary:                 var(--tertiary);
+$error:                    var(--error);
+$on-surface:               var(--on-surface);
+$on-surface-variant:       var(--on-surface-variant);
+$outline:                  var(--outline);
+$outline-variant:          var(--outline-variant);
+$surface-container-low:    var(--surface-container-low);
+$surface-container:        var(--surface-container);
+
+// ── Spacing ──────────────────────────────────────────────────────────────────
+$page-padding-top:   80px;
+$page-padding-h:     32px;
+$page-padding-h-sm:  16px;
+$page-padding-h-xs:  12px;
+
+// ── Breakpoints ──────────────────────────────────────────────────────────────
+$bp-md: 768px;
+$bp-sm: 480px;
+
+// ── Radius ───────────────────────────────────────────────────────────────────
+$radius-sm:  6px;
+$radius-md:  10px;
+$radius-lg:  12px;
+$radius-xl:  16px;
+$radius-2xl: 20px;
+
+// ── Typography ───────────────────────────────────────────────────────────────
+$font-body:    'Inter', system-ui, sans-serif;
+$font-display: 'Manrope', system-ui, sans-serif;
+
+// ── Colours used as literals (not CSS vars) ──────────────────────────────────
+$green-bg:   #dcfce7;
+$green-text: #166534;
+$red-bg:     #fee2e2;
+$amber:      #d97706;
+$amber-bg:   #fef3c7;
+$amber-text: #92400e;
+$amber-dark: #92400e;

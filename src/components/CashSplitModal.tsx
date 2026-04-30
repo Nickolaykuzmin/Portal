@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { formatCurrency } from '../utils/formatters';
 import type { CashSplitItem, TransactionType, Currency } from '../types';
+import s from './CashSplitModal.module.scss';
 
 interface CashSplitModalProps {
   totalAmount: number;
@@ -28,117 +29,86 @@ export default function CashSplitModal({
   const { categories } = useCategories();
   const [items, setItems] = useState<CashSplitItem[]>([EMPTY_ITEM()]);
 
-  const allocated = items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+  const allocated = items.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
   const remaining = Math.round((totalAmount - allocated) * 100) / 100;
-  const isValid = items.every((i) => i.description.trim() && Number(i.amount) > 0) && Math.abs(remaining) < 0.01;
+  const isValid =
+    items.every((i) => i.description.trim() && Number(i.amount) > 0) &&
+    Math.abs(remaining) < 0.01;
 
   const addItem = () => setItems((prev) => [...prev, EMPTY_ITEM()]);
   const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
 
   const updateItem = <K extends keyof CashSplitItem>(idx: number, key: K, value: CashSplitItem[K]) => {
-    setItems((prev) => prev.map((item, i) => i === idx ? { ...item, [key]: value } : item));
+    setItems((prev) => prev.map((item, i) => (i === idx ? { ...item, [key]: value } : item)));
   };
 
-  // Auto-fill remaining amount into last item
   const fillRemaining = (idx: number) => {
-    const otherSum = items.reduce((s, item, i) => i === idx ? s : s + (Number(item.amount) || 0), 0);
+    const otherSum = items.reduce((sum, item, i) => (i === idx ? sum : sum + (Number(item.amount) || 0)), 0);
     const fill = Math.round((totalAmount - otherSum) * 100) / 100;
     if (fill > 0) updateItem(idx, 'amount', fill);
   };
 
-  const inputStyle: React.CSSProperties = {
-    padding: '8px 10px',
-    border: '1px solid var(--outline-variant)',
-    borderRadius: 8,
-    fontSize: 13,
-    color: 'var(--on-surface)',
-    background: 'white',
-    outline: 'none',
-    fontFamily: 'Inter',
-    width: '100%',
-  };
+  // Progress bar fill color
+  const progressColor =
+    remaining < 0 ? 'var(--error)' : remaining === 0 ? 'var(--secondary)' : 'var(--primary)';
+  const progressWidth = `${Math.min((allocated / totalAmount) * 100, 100)}%`;
 
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(19,27,46,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 200, padding: 16,
-      }}
+      className={s.overlay}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="whisper-shadow" style={{
-        background: 'white', borderRadius: 20, padding: 28,
-        width: '100%', maxWidth: 560,
-        border: '1px solid var(--outline-variant)',
-        maxHeight: '90vh', overflowY: 'auto',
-      }}>
+      <div className={`whisper-shadow ${s.modal}`}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div className={s.header}>
           <div>
-            <h2 style={{ margin: '0 0 4px', fontFamily: 'Manrope', fontSize: 18, fontWeight: 700, color: 'var(--on-surface)' }}>
-              Розбити готівку
-            </h2>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--on-surface-variant)' }}>
-              Зняття {formatCurrency(totalAmount, currency)} · {date}
-            </p>
+            <h2>Розбити готівку</h2>
+            <p>Зняття {formatCurrency(totalAmount, currency)} · {date}</p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>close</span>
+          <button onClick={onClose} className={s.closeBtn}>
+            <span className={`material-symbols-outlined ${s.icon}`}>close</span>
           </button>
         </div>
 
         {/* Progress bar */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)' }}>
+        <div className={s.progress}>
+          <div className={s.progressLabels}>
+            <span className={s.allocated}>
               Розподілено: {formatCurrency(allocated, currency)}
             </span>
-            <span style={{
-              fontSize: 12, fontWeight: 700,
-              color: remaining < 0 ? 'var(--error)' : remaining === 0 ? 'var(--secondary)' : 'var(--on-surface-variant)',
-            }}>
-              {remaining === 0 ? '✓ Повністю' : remaining < 0 ? `Перевищено на ${formatCurrency(-remaining, currency)}` : `Залишок: ${formatCurrency(remaining, currency)}`}
+            <span
+              className={`${s.remaining} ${
+                remaining < 0 ? s.over : remaining === 0 ? s.done : ''
+              }`}
+            >
+              {remaining === 0
+                ? '✓ Повністю'
+                : remaining < 0
+                ? `Перевищено на ${formatCurrency(-remaining, currency)}`
+                : `Залишок: ${formatCurrency(remaining, currency)}`}
             </span>
           </div>
-          <div style={{ height: 6, background: 'var(--surface-container)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${Math.min((allocated / totalAmount) * 100, 100)}%`,
-              background: remaining < 0 ? 'var(--error)' : remaining === 0 ? 'var(--secondary)' : 'var(--primary)',
-              borderRadius: 3,
-              transition: 'width 0.2s ease',
-            }} />
+          <div className={s.progressTrack}>
+            <div
+              className={s.progressFill}
+              style={{ width: progressWidth, background: progressColor }}
+            />
           </div>
         </div>
 
         {/* Items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+        <div className={s.items}>
           {items.map((item, idx) => (
-            <div key={idx} style={{
-              background: 'var(--surface-container-low)',
-              borderRadius: 12, padding: 14,
-              border: '1px solid var(--outline-variant)',
-            }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <div key={idx} className={s.item}>
+              <div className={s.itemTop}>
                 {/* Type toggle */}
-                <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--outline-variant)', flexShrink: 0 }}>
+                <div className={s.typeToggle}>
                   {(['expense', 'income'] as TransactionType[]).map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => updateItem(idx, 'type', t)}
-                      style={{
-                        padding: '6px 10px', border: 'none', cursor: 'pointer',
-                        fontSize: 11, fontWeight: 700,
-                        background: item.type === t
-                          ? (t === 'income' ? '#dcfce7' : '#fee2e2')
-                          : 'white',
-                        color: item.type === t
-                          ? (t === 'income' ? 'var(--secondary)' : 'var(--tertiary)')
-                          : 'var(--on-surface-variant)',
-                      }}
+                      className={`${s.typeBtn} ${item.type === t ? s[t] : ''}`}
                     >
                       {t === 'income' ? '↑ Дохід' : '↓ Витрата'}
                     </button>
@@ -150,25 +120,19 @@ export default function CashSplitModal({
                   <button
                     type="button"
                     onClick={() => removeItem(idx)}
-                    style={{
-                      marginLeft: 'auto', background: 'none', border: 'none',
-                      cursor: 'pointer', padding: 4, borderRadius: 6,
-                      display: 'flex', alignItems: 'center',
-                    }}
+                    className={s.removeBtn}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--error)' }}>delete</span>
+                    <span className={`material-symbols-outlined ${s.icon}`}>delete</span>
                   </button>
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'end' }}>
+              <div className={s.itemFields}>
                 {/* Description */}
                 <div>
-                  <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--on-surface-variant)', marginBottom: 4 }}>
-                    Опис
-                  </label>
+                  <label className={s.fieldLabel}>Опис</label>
                   <input
-                    style={inputStyle}
+                    className={s.input}
                     value={item.description}
                     onChange={(e) => updateItem(idx, 'description', e.target.value)}
                     placeholder="Напр. Оренда квартири"
@@ -176,50 +140,43 @@ export default function CashSplitModal({
                 </div>
 
                 {/* Amount */}
-                <div style={{ width: 110 }}>
-                  <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--on-surface-variant)', marginBottom: 4 }}>
-                    Сума
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      style={{ ...inputStyle, paddingRight: 28 }}
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={item.amount || ''}
-                      onChange={(e) => updateItem(idx, 'amount', parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                    />
-                    {remaining > 0 && (
-                      <button
-                        type="button"
-                        title="Заповнити залишок"
-                        onClick={() => fillRemaining(idx)}
-                        style={{
-                          position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-                          background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                          display: 'flex', alignItems: 'center',
-                        }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--primary)' }}>arrow_downward</span>
-                      </button>
-                    )}
-                  </div>
+                <div className={s.amountWrap}>
+                  <label className={s.fieldLabel}>Сума</label>
+                  <input
+                    className={s.input}
+                    style={{ paddingRight: remaining > 0 ? 28 : undefined }}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.amount || ''}
+                    onChange={(e) => updateItem(idx, 'amount', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                  />
+                  {remaining > 0 && (
+                    <button
+                      type="button"
+                      title="Заповнити залишок"
+                      onClick={() => fillRemaining(idx)}
+                      className={s.fillBtn}
+                    >
+                      <span className={`material-symbols-outlined ${s.icon}`}>arrow_downward</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Category */}
-                <div style={{ width: 130 }}>
-                  <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--on-surface-variant)', marginBottom: 4 }}>
-                    Категорія
-                  </label>
+                <div className={s.categoryWrap}>
+                  <label className={s.fieldLabel}>Категорія</label>
                   <select
-                    style={{ ...inputStyle, cursor: 'pointer' }}
+                    className={s.select}
                     value={item.category}
                     onChange={(e) => updateItem(idx, 'category', e.target.value)}
                   >
                     {categories
                       .filter((c) => c.type === item.type)
-                      .map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
                   </select>
                 </div>
               </div>
@@ -228,48 +185,23 @@ export default function CashSplitModal({
         </div>
 
         {/* Add item */}
-        <button
-          type="button"
-          onClick={addItem}
-          style={{
-            width: '100%', padding: '10px', borderRadius: 10,
-            border: '1.5px dashed var(--outline-variant)',
-            background: 'transparent', color: 'var(--primary)',
-            fontWeight: 600, fontSize: 13, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            marginBottom: 20,
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+        <button type="button" onClick={addItem} className={s.addBtn}>
+          <span className={`material-symbols-outlined ${s.icon}`}>add</span>
           Додати статтю
         </button>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              flex: 1, padding: '11px', borderRadius: 10,
-              border: '1px solid var(--outline-variant)', background: 'white',
-              color: 'var(--on-surface)', fontWeight: 600, fontSize: 14, cursor: 'pointer',
-            }}
-          >
+        <div className={s.footer}>
+          <button type="button" onClick={onClose} className={s.cancelBtn}>
             Скасувати
           </button>
           <button
             type="button"
             onClick={() => isValid && onSave(items)}
             disabled={!isValid}
-            style={{
-              flex: 2, padding: '11px', borderRadius: 10, border: 'none',
-              background: isValid ? 'var(--primary)' : 'var(--outline-variant)',
-              color: 'white', fontWeight: 600, fontSize: 14,
-              cursor: isValid ? 'pointer' : 'not-allowed',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
+            className={s.saveBtn}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>call_split</span>
+            <span className={`material-symbols-outlined ${s.icon}`}>call_split</span>
             Замінити зняттям готівки
           </button>
         </div>

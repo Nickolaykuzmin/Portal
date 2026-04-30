@@ -1,0 +1,129 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.overlay {
+  @include m.modal-overlay;
+}
+
+.modal {
+  @include m.card;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  h2 {
+    margin: 0;
+    font-family: v.$font-display;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+
+  .icon {
+    color: var(--outline);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  @include m.label-uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.input,
+.select {
+  @include m.form-input;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+// ── Type toggle ───────────────────────────────────────────────────────────────
+.typeToggle {
+  display: flex;
+  gap: 8px;
+}
+
+.typeBtn {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.income {
+    border-color: var(--secondary);
+    background: #dcfce7;
+    color: var(--secondary);
+  }
+
+  &.expense {
+    border-color: var(--tertiary);
+    background: #fee2e2;
+    color: var(--tertiary);
+  }
+}
+
+// ── Footer buttons ────────────────────────────────────────────────────────────
+.footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}

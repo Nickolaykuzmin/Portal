@@ -1,0 +1,578 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.page {
+  padding: v.$page-padding-top v.$page-padding-h v.$page-padding-h;
+  max-width: 900px;
+  margin: 0 auto;
+
+  @include m.md {
+    padding: 72px v.$page-padding-h-sm 24px;
+  }
+
+  @include m.sm {
+    padding: 68px v.$page-padding-h-xs 20px;
+  }
+}
+
+// ── Step indicator ────────────────────────────────────────────────────────────
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  // background + color set inline (dynamic active/done state)
+}
+
+.stepLabel {
+  font-size: 13px;
+  font-weight: 600;
+  // color set inline (dynamic)
+}
+
+.stepArrow {
+  color: var(--outline-variant);
+  margin: 0 4px;
+}
+
+// ── Drop zone ─────────────────────────────────────────────────────────────────
+.dropZone {
+  border: 2px dashed var(--outline-variant);
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  background: white;
+  transition: all 0.2s;
+
+  &.dragging {
+    border-color: var(--primary);
+    background: var(--surface-container-low);
+  }
+}
+
+.dropIcon {
+  font-size: 56px;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 16px;
+}
+
+.dropTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0 0 8px;
+}
+
+.dropSub {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  margin: 0 0 24px;
+}
+
+.chooseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+
+  .icon {
+    font-size: 18px;
+  }
+}
+
+// ── Error banner ──────────────────────────────────────────────────────────────
+.error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--error-container);
+  color: var(--error);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// ── Banks card ────────────────────────────────────────────────────────────────
+.banksCard {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 24px;
+
+  h3 {
+    margin: 0 0 16px;
+    font-family: v.$font-display;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.banksGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+
+  @include m.md {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bankItem {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface-container-low);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .icon {
+    font-size: 16px;
+    color: var(--primary);
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+}
+
+// ── Preview step ──────────────────────────────────────────────────────────────
+.previewBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  padding: 14px 20px;
+  border: 1px solid var(--outline-variant);
+  margin-bottom: 20px;
+}
+
+.previewStats {
+  display: flex;
+  gap: 24px;
+}
+
+.previewStat {
+  .statLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .statValue {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.previewActions {
+  display: flex;
+  gap: 10px;
+}
+
+.outlineBtn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.emptyState {
+  background: white;
+  border-radius: 16px;
+  padding: 48px;
+  text-align: center;
+  border: 1px solid var(--outline-variant);
+
+  .icon {
+    font-size: 48px;
+    color: var(--outline-variant);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--on-surface);
+    margin: 0 0 16px;
+  }
+
+  button {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+// ── Transactions table ────────────────────────────────────────────────────────
+.tableWrap {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.thead {
+  background: var(--surface-container-low);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+
+  &.right { text-align: right; }
+}
+
+.tr {
+  border-bottom: 1px solid var(--outline-variant);
+  transition: opacity 0.15s;
+
+  &.deselected { opacity: 0.4; }
+  &.atm        { background: #fffbeb; }
+  &.selected   { background: white; }
+  &.unselected { background: var(--surface-container-low); }
+}
+
+.td {
+  padding: 10px 16px;
+}
+
+.descCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .atmIcon {
+    font-size: 15px;
+    color: #d97706;
+    flex-shrink: 0;
+    font-variation-settings: "'FILL' 1";
+  }
+
+  .descText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--on-surface);
+    max-width: 240px;
+  }
+}
+
+.dateText {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+}
+
+.cashBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.typeSelect {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--outline-variant);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+
+  &.income {
+    color: var(--secondary);
+    background: #dcfce7;
+  }
+
+  &.expense {
+    color: var(--tertiary);
+    background: #fee2e2;
+  }
+}
+
+.splitBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #d97706;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+
+  .icon { font-size: 14px; }
+}
+
+.categorySelect {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--outline-variant);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  background: white;
+}
+
+.amountCell {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+
+  &.income  { color: var(--secondary); }
+  &.expense { color: var(--on-surface); }
+}
+
+// ── Save bar ──────────────────────────────────────────────────────────────────
+.saveBar {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modeBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-container-low);
+  border-radius: 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--outline-variant);
+
+  .infoIcon {
+    font-size: 16px;
+    color: var(--outline);
+  }
+
+  .modeLabel {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    font-weight: 500;
+  }
+}
+
+.modeBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+  }
+
+  .icon { font-size: 14px; }
+}
+
+.saveActions {
+  display: flex;
+  gap: 12px;
+}
+
+.backBtn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.saveBtn {
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:disabled {
+    background: var(--outline-variant);
+    cursor: not-allowed;
+  }
+
+  .icon { font-size: 18px; }
+}
+
+// ── Done step ─────────────────────────────────────────────────────────────────
+.doneWrap {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.doneIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+
+  .icon {
+    font-size: 40px;
+    color: var(--secondary);
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.doneTitle {
+  font-family: v.$font-display;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0 0 12px;
+}
+
+.mergeStats {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin: 0 0 24px;
+}
+
+.mergeStat {
+  padding: 14px 24px;
+  border-radius: 12px;
+
+  &.added {
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+
+    .count { color: var(--secondary); }
+    .label { color: #166534; }
+  }
+
+  &.skipped {
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+
+    .count { color: var(--outline); }
+    .label { color: var(--on-surface-variant); }
+  }
+
+  .count {
+    font-size: 28px;
+    font-weight: 800;
+    font-family: v.$font-display;
+  }
+
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+}
+
+.doneSub {
+  font-size: 15px;
+  color: var(--on-surface-variant);
+  margin: 0 0 32px;
+}
+
+.doneActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.doneBackBtn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.doneLinkBtn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+}

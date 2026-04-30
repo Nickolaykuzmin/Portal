@@ -1,0 +1,98 @@
+@use '../styles/variables' as v;
+
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.06), 0 8px 24px rgba(19, 27, 46, 0.04);
+  border: 1px solid var(--outline-variant);
+  position: relative;
+  overflow: hidden;
+}
+
+.accent {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  opacity: 0.04;
+  border-radius: 0 20px 0 80px;
+  // background is set inline via style prop (dynamic color)
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+}
+
+.iconWrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background + box-shadow set inline (dynamic color)
+
+  .icon {
+    font-size: 20px;
+    color: white;
+    font-variation-settings: "'FILL' 1, 'wght' 400";
+  }
+}
+
+.body {
+  .value {
+    font-family: v.$font-display;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--on-surface);
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: var(--outline);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  width: fit-content;
+
+  &.positive {
+    background: #dcfce7;
+    color: var(--secondary);
+  }
+
+  &.negative {
+    background: #fee2e2;
+    color: var(--tertiary);
+  }
+
+  .icon {
+    font-size: 12px;
+  }
+}

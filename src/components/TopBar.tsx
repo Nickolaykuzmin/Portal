@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
 import type { Currency } from '../types';
+import s from './TopBar.module.scss';
 
 interface TopBarProps {
   title: string;
@@ -18,79 +19,26 @@ export default function TopBar({ title, onSearch, onMenuClick }: TopBarProps) {
   };
 
   return (
-    <header
-      className="topbar"
-      style={{
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        left: 240,
-        height: 64,
-        background: 'rgba(250,248,255,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--outline-variant)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 32px',
-        zIndex: 40,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <header className={`topbar ${s.topbar}`}>
+      <div className={s.left}>
         <button
           onClick={onMenuClick}
-          className="topbar-menu-btn"
-          style={{
-            display: 'none',
-            background: 'none', border: 'none', cursor: 'pointer',
-            padding: 4, borderRadius: 8,
-            alignItems: 'center', justifyContent: 'center',
-          }}
+          className={`topbar-menu-btn ${s.menuBtn}`}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 24, color: 'var(--on-surface)' }}>menu</span>
+          <span className={`material-symbols-outlined ${s.icon}`}>menu</span>
         </button>
 
-        <h1
-          className="topbar-title"
-          style={{
-            margin: 0,
-            fontFamily: 'Manrope',
-            fontSize: 20,
-            fontWeight: 700,
-            color: 'var(--on-surface)',
-            letterSpacing: '-0.3px',
-          }}
-        >
-          {title}
-        </h1>
+        <h1 className={`topbar-title ${s.title}`}>{title}</h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className={s.right}>
         {/* Currency toggle */}
-        <div style={{
-          display: 'flex',
-          background: 'var(--surface-container)',
-          borderRadius: 20,
-          padding: 3,
-          border: '1px solid var(--outline-variant)',
-        }}>
+        <div className={s.currencyToggle}>
           {(['RON', 'EUR'] as Currency[]).map((cur) => (
             <button
               key={cur}
               onClick={() => setDisplayCurrency(cur)}
-              style={{
-                padding: '5px 14px',
-                borderRadius: 16,
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: 12,
-                letterSpacing: '0.04em',
-                transition: 'all 0.18s ease',
-                background: displayCurrency === cur ? 'var(--primary)' : 'transparent',
-                color: displayCurrency === cur ? 'white' : 'var(--on-surface-variant)',
-                boxShadow: displayCurrency === cur ? '0 2px 8px rgba(0,74,198,0.25)' : 'none',
-              }}
+              className={`${s.currencyBtn}${displayCurrency === cur ? ` ${s.active}` : ''}`}
             >
               {cur === 'EUR' ? '€ EUR' : 'lei RON'}
             </button>
@@ -98,29 +46,13 @@ export default function TopBar({ title, onSearch, onMenuClick }: TopBarProps) {
         </div>
 
         {onSearch && (
-          <div style={{ position: 'relative' }} className="topbar-search">
-            <span className="material-symbols-outlined" style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: 18,
-              color: 'var(--outline)',
-            }}>search</span>
+          <div className={`topbar-search ${s.searchWrap}`}>
+            <span className={`material-symbols-outlined ${s.searchIcon}`}>search</span>
             <input
               value={query}
               onChange={handleChange}
               placeholder="Пошук транзакцій..."
-              style={{
-                background: 'white',
-                border: '1px solid var(--outline-variant)',
-                borderRadius: 20,
-                padding: '7px 16px 7px 34px',
-                fontSize: 14,
-                color: 'var(--on-surface)',
-                outline: 'none',
-                width: 240,
-              }}
+              className={s.searchInput}
             />
           </div>
         )}

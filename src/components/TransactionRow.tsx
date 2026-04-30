@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { useCategories } from '../hooks/useCategories';
 import { useAppContext } from '../hooks/useAppContext';
 import { resolveCategory } from '../utils/categoryHelpers';
 import type { Transaction } from '../types';
+import s from './TransactionRow.module.scss';
 
 function cleanDisplayDesc(desc: string | undefined): string {
   if (!desc) return '—';
@@ -37,68 +37,47 @@ interface TransactionRowProps {
 export default function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
   const { categories } = useCategories();
   const { displayCurrency, convertAmount } = useAppContext();
-  const [hovered, setHovered] = useState(false);
   const category = resolveCategory(transaction.category, categories);
   const displayDesc = cleanDisplayDesc(transaction.description);
   const displayAmount = convertAmount(transaction.amount || 0, transaction.currency || 'RON');
 
+  const catBg = (category.color || '#737686') + '15';
+
   return (
-    <tr
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        borderBottom: '1px solid var(--outline-variant)',
-        background: hovered ? 'var(--surface-container-low)' : 'transparent',
-        transition: 'background 0.12s ease',
-      }}
-    >
+    <tr className={s.row}>
       {/* Description */}
-      <td style={{ padding: '12px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-            background: (category.color || '#737686') + '15',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <span className="material-symbols-outlined" style={{
-              fontSize: 18,
-              color: category.color || '#737686',
-              fontVariationSettings: "'FILL' 1",
-            }}>
+      <td className={s.cell}>
+        <div className={s.descWrap}>
+          <div className={s.iconChip} style={{ background: catBg }}>
+            <span
+              className={`material-symbols-outlined ${s.icon}`}
+              style={{ color: category.color || '#737686' }}
+            >
               {category.icon || 'category'}
             </span>
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{
-              fontSize: 13, fontWeight: 600, color: 'var(--on-surface)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              maxWidth: 260,
-            }}>
-              {displayDesc}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--outline)', marginTop: 1 }}>
-              {transaction.bank || 'BT'}
-            </div>
+          <div className={s.descText}>
+            <div className={s.name}>{displayDesc}</div>
+            <div className={s.bank}>{transaction.bank || 'BT'}</div>
           </div>
         </div>
       </td>
 
       {/* Date */}
-      <td className="hide-mobile" style={{ padding: '12px 16px', fontSize: 12, color: 'var(--on-surface-variant)', whiteSpace: 'nowrap' }}>
+      <td className={`hide-mobile ${s.dateCell}`}>
         {formatDate(transaction.date)}
       </td>
 
       {/* Category chip */}
-      <td className="hide-mobile" style={{ padding: '12px 16px' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '4px 10px', borderRadius: 20,
-          fontSize: 11, fontWeight: 600,
-          background: (category.color || '#737686') + '15',
-          color: category.color || '#737686',
-          whiteSpace: 'nowrap',
-        }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 12, fontVariationSettings: "'FILL' 1" }}>
+      <td className={`hide-mobile ${s.cell}`}>
+        <span
+          className={s.categoryChip}
+          style={{
+            background: catBg,
+            color: category.color || '#737686',
+          }}
+        >
+          <span className={`material-symbols-outlined ${s.icon}`}>
             {category.icon || 'category'}
           </span>
           {category.name || 'Інше'}
@@ -106,45 +85,28 @@ export default function TransactionRow({ transaction, onEdit, onDelete }: Transa
       </td>
 
       {/* Amount */}
-      <td style={{
-        padding: '12px 16px', textAlign: 'right',
-        fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap',
-        color: transaction.type === 'income' ? 'var(--secondary)' : 'var(--on-surface)',
-      }}>
-        <span style={{
-          padding: '3px 8px', borderRadius: 8,
-          background: transaction.type === 'income' ? '#dcfce7' : 'transparent',
-        }}>
+      <td className={`${s.amountCell} ${transaction.type === 'income' ? s.income : s.expense}`}>
+        <span className={`${s.amountPill} ${transaction.type === 'income' ? s.income : ''}`}>
           {transaction.type === 'income' ? '+' : '−'}{formatCurrency(displayAmount, displayCurrency)}
         </span>
       </td>
 
       {/* Actions */}
-      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-        <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}>
+      <td className={s.actionsCell}>
+        <div className={s.actions}>
           <button
             onClick={(e) => { e.stopPropagation(); onEdit?.(transaction); }}
             title="Редагувати"
-            style={{
-              background: 'var(--surface-container)',
-              border: 'none', cursor: 'pointer',
-              padding: '5px', borderRadius: 7,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
+            className={s.editBtn}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--on-surface-variant)' }}>edit</span>
+            <span className={`material-symbols-outlined ${s.icon}`}>edit</span>
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete?.(transaction); }}
             title="Видалити"
-            style={{
-              background: 'var(--error-container)',
-              border: 'none', cursor: 'pointer',
-              padding: '5px', borderRadius: 7,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
+            className={s.deleteBtn}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--error)' }}>delete</span>
+            <span className={`material-symbols-outlined ${s.icon}`}>delete</span>
           </button>
         </div>
       </td>

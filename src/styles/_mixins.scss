@@ -1,0 +1,82 @@
+@use 'variables' as v;
+
+// ── Responsive helpers ────────────────────────────────────────────────────────
+@mixin md {
+  @media (max-width: #{v.$bp-md}) { @content; }
+}
+
+@mixin sm {
+  @media (max-width: #{v.$bp-sm}) { @content; }
+}
+
+// ── Reusable patterns ─────────────────────────────────────────────────────────
+@mixin card {
+  background: white;
+  border-radius: v.$radius-2xl;
+  border: 1px solid var(--outline-variant);
+}
+
+@mixin icon-chip($size: 32px, $radius: 8px) {
+  width: $size;
+  height: $size;
+  border-radius: $radius;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@mixin label-uppercase {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+@mixin pill-button {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+@mixin form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--outline-variant);
+  border-radius: v.$radius-md;
+  font-size: 14px;
+  color: var(--on-surface);
+  background: white;
+  outline: none;
+  font-family: v.$font-body;
+}
+
+@mixin modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(19, 27, 46, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+@mixin action-btn($bg: var(--primary), $color: white) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: v.$radius-lg;
+  background: $bg;
+  color: $color;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}

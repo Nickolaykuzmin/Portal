@@ -1,0 +1,231 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.page {
+  padding: v.$page-padding-top v.$page-padding-h v.$page-padding-h;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @include m.md {
+    padding: 72px v.$page-padding-h-sm 24px;
+  }
+
+  @include m.sm {
+    padding: 68px v.$page-padding-h-xs 20px;
+  }
+}
+
+.loading {
+  padding: 80px 32px 32px;
+  text-align: center;
+  color: var(--on-surface-variant);
+}
+
+// ── Stats grid ────────────────────────────────────────────────────────────────
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @include m.md {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include m.sm {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+// ── Charts row ────────────────────────────────────────────────────────────────
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+
+  @include m.md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartCard {
+  @include m.card;
+  padding: 28px;
+
+  h2 {
+    margin: 0 0 20px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.chartEmpty {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--on-surface-variant);
+}
+
+// ── Top categories ────────────────────────────────────────────────────────────
+.topCatCard {
+  @include m.card;
+  padding: 24px;
+
+  h2 {
+    margin: 0 0 16px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.topCatEmpty {
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.topCatList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.topCatItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background set inline (dynamic)
+
+  .icon {
+    font-size: 15px;
+    font-variation-settings: "'FILL' 1";
+    // color set inline
+  }
+}
+
+.catInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.catRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+
+  .name  { font-size: 12px; font-weight: 600; color: var(--on-surface); }
+  .value { font-size: 12px; font-weight: 700; color: var(--on-surface); }
+}
+
+// ── Recent transactions ───────────────────────────────────────────────────────
+.recentCard {
+  @include m.card;
+  overflow: hidden;
+}
+
+.recentHeader {
+  padding: 20px 24px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+
+  a {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+  }
+}
+
+.recentEmpty {
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--on-surface-variant);
+
+  .icon {
+    font-size: 40px;
+    color: var(--outline-variant);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  a { color: var(--primary); }
+}
+
+.recentTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.recentRow {
+  border-top: 1px solid var(--outline-variant);
+}
+
+.recentTd {
+  padding: 12px 24px;
+}
+
+.recentDesc {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recentIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background set inline
+
+  .icon {
+    font-size: 16px;
+    font-variation-settings: "'FILL' 1";
+    // color set inline
+  }
+}
+
+.recentInfo {
+  .name { font-size: 13px; font-weight: 600; color: var(--on-surface); }
+  .date { font-size: 11px; color: var(--outline); }
+}
+
+.recentAmount {
+  padding: 12px 24px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 700;
+
+  &.income  { color: var(--secondary); }
+  &.expense { color: var(--on-surface); }
+}

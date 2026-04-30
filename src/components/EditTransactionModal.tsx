@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import type { Transaction, TransactionType, Currency } from '../types';
+import s from './EditTransactionModal.module.scss';
 
 interface FormState {
   description: string;
@@ -53,87 +54,30 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
     });
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid var(--outline-variant)',
-    borderRadius: 8,
-    fontSize: 14,
-    color: 'var(--on-surface)',
-    background: 'white',
-    outline: 'none',
-    fontFamily: 'Inter',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 11,
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: 'var(--on-surface-variant)',
-    marginBottom: 6,
-  };
-
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(19,27,46,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-        padding: 16,
-      }}
+      className={s.overlay}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="whisper-shadow" style={{
-        background: 'white',
-        borderRadius: 20,
-        padding: 32,
-        width: '100%',
-        maxWidth: 480,
-        border: '1px solid var(--outline-variant)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontFamily: 'Manrope', fontSize: 20, fontWeight: 700, color: 'var(--on-surface)' }}>
-            {transaction?.id ? 'Редагувати транзакцію' : 'Нова транзакція'}
-          </h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>close</span>
+      <div className={`whisper-shadow ${s.modal}`}>
+        <div className={s.modalHeader}>
+          <h2>{transaction?.id ? 'Редагувати транзакцію' : 'Нова транзакція'}</h2>
+          <button onClick={onClose} className={s.closeBtn}>
+            <span className={`material-symbols-outlined ${s.icon}`}>close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <form onSubmit={handleSubmit} className={s.form}>
           {/* Type toggle */}
-          <div>
-            <label style={labelStyle}>Тип</label>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className={s.field}>
+            <label className={s.label}>Тип</label>
+            <div className={s.typeToggle}>
               {(['expense', 'income'] as TransactionType[]).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, type: t }))}
-                  style={{
-                    flex: 1,
-                    padding: '8px 16px',
-                    borderRadius: 8,
-                    border: '1px solid',
-                    borderColor: form.type === t
-                      ? (t === 'income' ? 'var(--secondary)' : 'var(--tertiary)')
-                      : 'var(--outline-variant)',
-                    background: form.type === t
-                      ? (t === 'income' ? '#dcfce7' : '#fee2e2')
-                      : 'white',
-                    color: form.type === t
-                      ? (t === 'income' ? 'var(--secondary)' : 'var(--tertiary)')
-                      : 'var(--on-surface-variant)',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: 'pointer',
-                  }}
+                  className={`${s.typeBtn} ${form.type === t ? s[t] : ''}`}
                 >
                   {t === 'income' ? '↑ Дохід' : '↓ Витрата'}
                 </button>
@@ -141,10 +85,10 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle}>Опис</label>
+          <div className={s.field}>
+            <label className={s.label}>Опис</label>
             <input
-              style={inputStyle}
+              className={s.input}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="Назва транзакції"
@@ -152,11 +96,11 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Сума</label>
+          <div className={s.twoCol}>
+            <div className={s.field}>
+              <label className={s.label}>Сума</label>
               <input
-                style={inputStyle}
+                className={s.input}
                 type="number"
                 step="0.01"
                 min="0"
@@ -166,10 +110,10 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
                 required
               />
             </div>
-            <div>
-              <label style={labelStyle}>Валюта</label>
+            <div className={s.field}>
+              <label className={s.label}>Валюта</label>
               <select
-                style={inputStyle}
+                className={s.select}
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value as Currency }))}
               >
@@ -180,10 +124,10 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle}>Дата</label>
+          <div className={s.field}>
+            <label className={s.label}>Дата</label>
             <input
-              style={inputStyle}
+              className={s.input}
               type="date"
               value={form.date}
               onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
@@ -191,10 +135,10 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
             />
           </div>
 
-          <div>
-            <label style={labelStyle}>Категорія</label>
+          <div className={s.field}>
+            <label className={s.label}>Категорія</label>
             <select
-              style={inputStyle}
+              className={s.select}
               value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
             >
@@ -206,38 +150,11 @@ export default function EditTransactionModal({ transaction, onSave, onClose }: E
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: 10,
-                border: '1px solid var(--outline-variant)',
-                background: 'white',
-                color: 'var(--on-surface)',
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: 'pointer',
-              }}
-            >
+          <div className={s.footer}>
+            <button type="button" onClick={onClose} className={s.cancelBtn}>
               Скасувати
             </button>
-            <button
-              type="submit"
-              style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: 10,
-                border: 'none',
-                background: 'var(--primary)',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: 'pointer',
-              }}
-            >
+            <button type="submit" className={s.saveBtn}>
               Зберегти
             </button>
           </div>

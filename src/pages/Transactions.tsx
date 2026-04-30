@@ -7,6 +7,7 @@ import EditTransactionModal from '../components/EditTransactionModal';
 import TopBar from '../components/TopBar';
 import { formatCurrency } from '../utils/formatters';
 import type { Transaction } from '../types';
+import s from './Transactions.module.scss';
 
 function getMonthLabel(key: string): string {
   try {
@@ -53,8 +54,8 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
     return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
 
-  const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((s, t) => s + conv(t), 0);
-  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((s, t) => s + conv(t), 0);
+  const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((sum, t) => sum + conv(t), 0);
+  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((sum, t) => sum + conv(t), 0);
 
   const toggleMonth = (key: string) =>
     setCollapsedMonths((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -76,62 +77,39 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
   return (
     <>
       <TopBar title="Транзакції" onSearch={setSearch} onMenuClick={onMenuClick} />
-      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }} className="page-content">
+      <div className={`page-content ${s.page}`}>
 
         {/* Summary bar */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 24, alignItems: 'center' }} className="tx-summary-bar">
-          <div style={{
-            flex: 1, background: 'white', borderRadius: 12, padding: '14px 20px',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            border: '1px solid var(--outline-variant)',
-          }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Показано: {filtered.length} транзакцій
-            </span>
-            <div style={{ display: 'flex', gap: 24 }} className="tx-summary-amounts">
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--secondary)' }}>+{fmt(totalIncome)}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--tertiary)' }}>−{fmt(totalExpense)}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--primary)' }}>
-                ={fmt(totalIncome - totalExpense)}
-              </span>
+        <div className={`tx-summary-bar ${s.summaryBar}`}>
+          <div className={s.summaryCard}>
+            <span className={s.summaryLabel}>Показано: {filtered.length} транзакцій</span>
+            <div className={`tx-summary-amounts ${s.summaryAmounts}`}>
+              <span className={s.income}>+{fmt(totalIncome)}</span>
+              <span className={s.expense}>−{fmt(totalExpense)}</span>
+              <span className={s.net}>={fmt(totalIncome - totalExpense)}</span>
             </div>
           </div>
-          <button
-            onClick={handleNew}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '12px 20px', borderRadius: 12,
-              background: 'var(--primary)', color: 'white',
-              border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14,
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+          <button onClick={handleNew} className={s.newBtn}>
+            <span className={`material-symbols-outlined ${s.icon}`}>add</span>
             Нова
           </button>
         </div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div className={s.filters}>
           {(['all', 'income', 'expense'] as const).map((t) => (
-            <button key={t} onClick={() => setFilterType(t)} style={{
-              padding: '7px 16px', borderRadius: 20, border: '1px solid',
-              borderColor: filterType === t ? 'var(--primary)' : 'var(--outline-variant)',
-              background: filterType === t ? 'var(--primary)' : 'white',
-              color: filterType === t ? 'white' : 'var(--on-surface-variant)',
-              fontWeight: 600, fontSize: 13, cursor: 'pointer',
-            }}>
+            <button
+              key={t}
+              onClick={() => setFilterType(t)}
+              className={`${s.filterBtn}${filterType === t ? ` ${s.active}` : ''}`}
+            >
               {t === 'all' ? 'Всі' : t === 'income' ? '↑ Доходи' : '↓ Витрати'}
             </button>
           ))}
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            style={{
-              padding: '7px 12px', borderRadius: 20,
-              border: '1px solid var(--outline-variant)',
-              background: 'white', color: 'var(--on-surface)',
-              fontSize: 13, cursor: 'pointer', outline: 'none',
-            }}
+            className={s.filterSelect}
           >
             <option value="all">Всі категорії</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -140,89 +118,76 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
 
         {/* Monthly groups */}
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--on-surface-variant)' }}>Завантаження...</div>
+          <div className={s.loading}>Завантаження...</div>
         ) : filtered.length === 0 ? (
-          <div className="whisper-shadow" style={{ background: 'white', borderRadius: 16, padding: 60, textAlign: 'center' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--outline-variant)', display: 'block', marginBottom: 12 }}>receipt_long</span>
-            <p style={{ color: 'var(--on-surface-variant)', margin: 0 }}>
-              {transactions.length === 0 ? 'Немає транзакцій. Завантажте PDF statement.' : 'Нічого не знайдено.'}
+          <div className={`whisper-shadow ${s.empty}`}>
+            <span className={`material-symbols-outlined ${s.icon}`}>receipt_long</span>
+            <p>
+              {transactions.length === 0
+                ? 'Немає транзакцій. Завантажте PDF statement.'
+                : 'Нічого не знайдено.'}
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className={s.groups}>
             {grouped.map(([monthKey, txs]) => {
               const isCollapsed = collapsedMonths[monthKey];
-              const monthIncome  = txs.filter((t) => t.type === 'income').reduce((s, t) => s + conv(t), 0);
-              const monthExpense = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + conv(t), 0);
+              const monthIncome  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + conv(t), 0);
+              const monthExpense = txs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + conv(t), 0);
               const net = monthIncome - monthExpense;
 
               return (
-                <div key={monthKey} className="whisper-shadow" style={{ background: 'white', borderRadius: 16, overflow: 'hidden' }}>
+                <div key={monthKey} className={`whisper-shadow ${s.monthGroup}`}>
                   <div
                     onClick={() => toggleMonth(monthKey)}
-                    style={{
-                      padding: '14px 20px',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      cursor: 'pointer', userSelect: 'none',
-                      background: 'var(--surface-container-low)',
-                      borderBottom: isCollapsed ? 'none' : '1px solid var(--outline-variant)',
-                    }}
+                    className={`${s.monthHeader}${isCollapsed ? ` ${s.collapsed}` : ''}`}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--outline)', transition: 'transform 0.2s', transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
+                    <div className={s.monthLeft}>
+                      <span className={`material-symbols-outlined ${s.expandIcon}${isCollapsed ? ` ${s.collapsed}` : ''}`}>
                         expand_more
                       </span>
-                      <span style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: 15, color: 'var(--on-surface)', textTransform: 'capitalize' }}>
-                        {getMonthLabel(monthKey)}
-                      </span>
-                      <span style={{ fontSize: 12, color: 'var(--outline)', fontWeight: 500 }}>
-                        {txs.length} транзакцій
-                      </span>
+                      <span className={s.monthName}>{getMonthLabel(monthKey)}</span>
+                      <span className={s.monthCount}>{txs.length} транзакцій</span>
                     </div>
-                    <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                    <div className={s.monthRight}>
                       {monthIncome > 0 && (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--secondary)' }}>+{fmt(monthIncome)}</span>
+                        <span className={s.income}>+{fmt(monthIncome)}</span>
                       )}
                       {monthExpense > 0 && (
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--tertiary)' }}>−{fmt(monthExpense)}</span>
+                        <span className={s.expense}>−{fmt(monthExpense)}</span>
                       )}
-                      <span style={{
-                        fontSize: 13, fontWeight: 700,
-                        color: net >= 0 ? 'var(--secondary)' : 'var(--tertiary)',
-                        paddingLeft: 12, borderLeft: '1px solid var(--outline-variant)',
-                      }}>
+                      <span className={`${s.monthNet} ${net >= 0 ? s.positive : s.negative}`}>
                         {net >= 0 ? '+' : ''}{fmt(net)}
                       </span>
                     </div>
                   </div>
 
                   {!isCollapsed && (
-                    <div className="table-scroll-wrap">
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid var(--outline-variant)' }}>
-                          {['Транзакція', 'Дата', 'Категорія', 'Сума', ''].map((h) => (
-                            <th key={h} className={h === 'Дата' || h === 'Категорія' ? 'hide-mobile' : ''} style={{
-                              padding: '10px 16px',
-                              textAlign: h === 'Сума' ? 'right' : 'left',
-                              fontSize: 11, fontWeight: 600,
-                              textTransform: 'uppercase', letterSpacing: '0.05em',
-                              color: 'var(--on-surface-variant)',
-                            }}>{h}</th>
+                    <div className={`table-scroll-wrap ${s.tableWrap}`}>
+                      <table className={s.table}>
+                        <thead>
+                          <tr>
+                            {['Транзакція', 'Дата', 'Категорія', 'Сума', ''].map((h) => (
+                              <th
+                                key={h}
+                                className={`${s.th}${h === 'Дата' || h === 'Категорія' ? ' hide-mobile' : ''}${h === 'Сума' ? ` ${s.right}` : ''}`}
+                              >
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {txs.map((tx) => (
+                            <TransactionRow
+                              key={tx.id}
+                              transaction={tx}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                            />
                           ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {txs.map((tx) => (
-                          <TransactionRow
-                            key={tx.id}
-                            transaction={tx}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>

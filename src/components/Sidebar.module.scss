@@ -1,0 +1,207 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(19, 27, 46, 0.4);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 240px;
+  background: white;
+  border-right: 1px solid var(--outline-variant);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 12px;
+  z-index: 100;
+
+  @include m.md {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+
+    &.open {
+      transform: translateX(0);
+    }
+  }
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding: 4px 8px;
+}
+
+.logoWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoIcon {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #004ac6 0%, #2563eb 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 74, 198, 0.3);
+
+  .icon {
+    color: #fff;
+    font-size: 20px;
+    font-variation-settings: "'FILL' 1, 'wght' 500";
+  }
+}
+
+.logoText {
+  .name {
+    font-family: v.$font-display;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--on-surface);
+    letter-spacing: -0.4px;
+    line-height: 1.1;
+  }
+
+  .sub {
+    font-family: v.$font-display;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--outline);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+.closeBtn {
+  display: none;
+  background: var(--surface-container);
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+
+  @include m.md {
+    display: flex;
+  }
+
+  .icon {
+    font-size: 18px;
+    color: var(--on-surface-variant);
+  }
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+.nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-family: v.$font-body;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  background: transparent;
+  transition: all 0.15s ease;
+
+  &.active {
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--surface-container-low);
+  }
+}
+
+.navIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+
+  .icon {
+    font-size: 18px;
+    color: var(--on-surface-variant);
+    font-variation-settings: "'FILL' 0";
+  }
+
+  .navLink.active & {
+    background: var(--primary);
+
+    .icon {
+      color: white;
+      font-variation-settings: "'FILL' 1";
+    }
+  }
+}
+
+// ── Footer ────────────────────────────────────────────────────────────────────
+.footer {
+  border-top: 1px solid var(--outline-variant);
+  padding: 16px 8px 0;
+}
+
+.footerCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-container-low);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #006c49, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .icon {
+    font-size: 16px;
+    color: white;
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.footerInfo {
+  .title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+
+  .sub {
+    font-size: 11px;
+    color: var(--outline);
+  }
+}

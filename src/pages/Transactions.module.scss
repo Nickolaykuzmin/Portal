@@ -1,0 +1,227 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.page {
+  padding: v.$page-padding-top v.$page-padding-h v.$page-padding-h;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @include m.md {
+    padding: 72px v.$page-padding-h-sm 24px;
+  }
+
+  @include m.sm {
+    padding: 68px v.$page-padding-h-xs 20px;
+  }
+}
+
+// ── Summary bar ───────────────────────────────────────────────────────────────
+.summaryBar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+
+  @include m.md {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+.summaryCard {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--outline-variant);
+}
+
+.summaryLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summaryAmounts {
+  display: flex;
+  gap: 24px;
+
+  @include m.md {
+    gap: 12px;
+  }
+
+  .income  { font-size: 14px; font-weight: 700; color: var(--secondary); }
+  .expense { font-size: 14px; font-weight: 700; color: var(--tertiary); }
+  .net     { font-size: 14px; font-weight: 700; color: var(--primary); }
+}
+
+.newBtn {
+  @include m.action-btn;
+  white-space: nowrap;
+
+  .icon { font-size: 18px; }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  @include m.pill-button;
+  border-color: var(--outline-variant);
+  background: white;
+  color: var(--on-surface-variant);
+
+  &.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+  }
+}
+
+.filterSelect {
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+// ── Loading / empty ───────────────────────────────────────────────────────────
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--on-surface-variant);
+}
+
+.empty {
+  background: white;
+  border-radius: 16px;
+  padding: 60px;
+  text-align: center;
+
+  .icon {
+    font-size: 48px;
+    color: var(--outline-variant);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: var(--on-surface-variant);
+    margin: 0;
+  }
+}
+
+// ── Month groups ──────────────────────────────────────────────────────────────
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.monthGroup {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.monthHeader {
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface-container-low);
+  border-bottom: 1px solid var(--outline-variant);
+
+  &.collapsed {
+    border-bottom: none;
+  }
+}
+
+.monthLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.expandIcon {
+  font-size: 16px;
+  color: var(--outline);
+  transition: transform 0.2s;
+
+  &.collapsed {
+    transform: rotate(-90deg);
+  }
+}
+
+.monthName {
+  font-family: v.$font-display;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--on-surface);
+  text-transform: capitalize;
+}
+
+.monthCount {
+  font-size: 12px;
+  color: var(--outline);
+  font-weight: 500;
+}
+
+.monthRight {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+
+  .income  { font-size: 13px; font-weight: 700; color: var(--secondary); }
+  .expense { font-size: 13px; font-weight: 700; color: var(--tertiary); }
+}
+
+.monthNet {
+  font-size: 13px;
+  font-weight: 700;
+  padding-left: 12px;
+  border-left: 1px solid var(--outline-variant);
+
+  &.positive { color: var(--secondary); }
+  &.negative { color: var(--tertiary); }
+}
+
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+  border-bottom: 1px solid var(--outline-variant);
+
+  &.right { text-align: right; }
+}

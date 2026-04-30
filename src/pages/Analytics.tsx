@@ -8,6 +8,7 @@ import { useCategories } from '../hooks/useCategories';
 import { formatCurrency, calcTotals, groupByMonth, groupByCategory } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import TopBar from '../components/TopBar';
+import s from './Analytics.module.scss';
 
 interface PeriodOption {
   key: string;
@@ -97,47 +98,43 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
   return (
     <>
       <TopBar title="Аналітика" onMenuClick={onMenuClick} />
-      <div style={{ padding: '80px 32px 32px', maxWidth: 1200, margin: '0 auto' }}>
+      <div className={s.page}>
 
         {/* Period pills */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+        <div className={s.periods}>
           {PERIOD_OPTIONS.map((p) => (
-            <button key={p.key} onClick={() => setPeriod(p.key)} style={{
-              padding: '7px 18px', borderRadius: 20, border: '1.5px solid',
-              borderColor: period === p.key ? 'var(--primary)' : 'var(--outline-variant)',
-              background: period === p.key ? 'var(--primary)' : 'white',
-              color: period === p.key ? 'white' : 'var(--on-surface-variant)',
-              fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
-            }}>
+            <button
+              key={p.key}
+              onClick={() => setPeriod(p.key)}
+              className={`${s.periodBtn}${period === p.key ? ` ${s.active}` : ''}`}
+            >
               {p.label}
             </button>
           ))}
         </div>
 
         {/* KPI cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }} className="stats-grid kpi-grid">
+        <div className={s.kpiGrid}>
           {kpis.map((kpi) => (
-            <div key={kpi.label} style={{
-              background: 'white', borderRadius: 16, padding: '18px 20px',
-              border: '1px solid var(--outline-variant)',
-              boxShadow: '0 1px 3px rgba(19,27,46,0.05)',
-              position: 'relative', overflow: 'hidden',
-            }}>
-              <div style={{ position: 'absolute', top: 0, right: 0, width: 60, height: 60, background: kpi.color, opacity: 0.06, borderRadius: '0 16px 0 60px' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--on-surface-variant)' }}>{kpi.label}</span>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: kpi.color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 8px ${kpi.color}40` }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'white', fontVariationSettings: "'FILL' 1" }}>{kpi.icon}</span>
+            <div key={kpi.label} className={s.kpiCard}>
+              <div className={s.kpiAccent} style={{ background: kpi.color }} />
+              <div className={s.kpiHeader}>
+                <span className={s.kpiLabel}>{kpi.label}</span>
+                <div
+                  className={s.kpiIcon}
+                  style={{ background: kpi.color, boxShadow: `0 3px 8px ${kpi.color}40` }}
+                >
+                  <span className={`material-symbols-outlined ${s.icon}`}>{kpi.icon}</span>
                 </div>
               </div>
-              <div style={{ fontFamily: 'Manrope', fontSize: 20, fontWeight: 800, color: 'var(--on-surface)', letterSpacing: '-0.3px' }}>{kpi.value}</div>
+              <div className={s.kpiValue}>{kpi.value}</div>
             </div>
           ))}
         </div>
 
         {/* Area chart */}
-        <div style={{ background: 'white', borderRadius: 20, padding: 28, marginBottom: 24, border: '1px solid var(--outline-variant)', boxShadow: '0 1px 3px rgba(19,27,46,0.05)' }}>
-          <h2 style={{ margin: '0 0 20px', fontFamily: 'Manrope', fontSize: 17, fontWeight: 700, color: 'var(--on-surface)' }}>Динаміка по місяцях</h2>
+        <div className={s.areaCard}>
+          <h2>Динаміка по місяцях</h2>
           {monthlyData.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={monthlyData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
@@ -153,8 +150,13 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={70}
-                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={70}
+                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                />
                 <Tooltip
                   contentStyle={{ borderRadius: 12, border: '1px solid var(--outline-variant)', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
                   formatter={(v) => formatCurrency(v as number)}
@@ -168,7 +170,7 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
         </div>
 
         {/* Pie charts */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }} className="charts-grid">
+        <div className={s.pieGrid}>
           <PieCard title="Витрати за категоріями" data={expensePie} total={totals.expenses} />
           <PieCard title="Доходи за категоріями"  data={incomePie}  total={totals.income} />
         </div>
@@ -185,35 +187,57 @@ interface PieCardProps {
 
 function PieCard({ title, data, total }: PieCardProps) {
   return (
-    <div style={{ background: 'white', borderRadius: 20, padding: 24, border: '1px solid var(--outline-variant)', boxShadow: '0 1px 3px rgba(19,27,46,0.05)' }}>
-      <h2 style={{ margin: '0 0 20px', fontFamily: 'Manrope', fontSize: 17, fontWeight: 700, color: 'var(--on-surface)' }}>{title}</h2>
+    <div className={s.pieCard}>
+      <h2>{title}</h2>
       {data.length > 0 ? (
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-          <div style={{ flexShrink: 0 }}>
+        <div className={s.pieContent}>
+          <div className={s.pieChartWrap}>
             <ResponsiveContainer width={160} height={160}>
               <PieChart>
-                <Pie data={data} cx="50%" cy="50%" innerRadius={46} outerRadius={72} dataKey="value" paddingAngle={3}>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={46}
+                  outerRadius={72}
+                  dataKey="value"
+                  paddingAngle={3}
+                >
                   {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
-                <Tooltip formatter={(v) => formatCurrency(v as number)} contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid var(--outline-variant)' }} />
+                <Tooltip
+                  formatter={(v) => formatCurrency(v as number)}
+                  contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid var(--outline-variant)' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div className={s.pieLegend}>
             {data.map((item) => {
               const pct = total > 0 ? ((item.value / total) * 100).toFixed(0) : '0';
               return (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0, background: item.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 13, color: item.color, fontVariationSettings: "'FILL' 1" }}>{item.icon || 'category'}</span>
+                <div key={item.id} className={s.pieLegendItem}>
+                  <div
+                    className={s.pieLegendIcon}
+                    style={{ background: item.color + '20' }}
+                  >
+                    <span
+                      className={`material-symbols-outlined ${s.icon}`}
+                      style={{ color: item.color }}
+                    >
+                      {item.icon || 'category'}
+                    </span>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>{item.name}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--on-surface)', marginLeft: 4 }}>{pct}%</span>
+                  <div className={s.pieLegendInfo}>
+                    <div className={s.pieLegendRow}>
+                      <span className={s.name}>{item.name}</span>
+                      <span className={s.pct}>{pct}%</span>
                     </div>
-                    <div style={{ height: 3, background: 'var(--surface-container)', borderRadius: 2, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: item.color, borderRadius: 2 }} />
+                    <div className={s.pieLegendBar}>
+                      <div
+                        className={s.pieLegendFill}
+                        style={{ width: `${pct}%`, background: item.color }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -228,9 +252,9 @@ function PieCard({ title, data, total }: PieCardProps) {
 
 function EmptyChart() {
   return (
-    <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--on-surface-variant)' }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--outline-variant)', display: 'block', marginBottom: 8 }}>bar_chart</span>
-      <p style={{ margin: 0, fontSize: 13 }}>Немає даних</p>
+    <div className={s.emptyChart}>
+      <span className={`material-symbols-outlined ${s.icon}`}>bar_chart</span>
+      <p>Немає даних</p>
     </div>
   );
 }

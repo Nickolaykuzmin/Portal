@@ -1,0 +1,256 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.page {
+  padding: v.$page-padding-top v.$page-padding-h v.$page-padding-h;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @include m.md {
+    padding: 72px v.$page-padding-h-sm 24px;
+  }
+}
+
+// ── Period pills ──────────────────────────────────────────────────────────────
+.periods {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.periodBtn {
+  @include m.pill-button;
+  padding: 7px 18px;
+  border: 1.5px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface-variant);
+
+  &.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+  }
+}
+
+// ── KPI grid ──────────────────────────────────────────────────────────────────
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @include m.md {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include m.sm {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.kpiCard {
+  background: white;
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpiAccent {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60px;
+  height: 60px;
+  opacity: 0.06;
+  border-radius: 0 16px 0 60px;
+  // background set inline
+}
+
+.kpiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--on-surface-variant);
+}
+
+.kpiIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background + box-shadow set inline
+
+  .icon {
+    font-size: 16px;
+    color: white;
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.kpiValue {
+  font-family: v.$font-display;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--on-surface);
+  letter-spacing: -0.3px;
+}
+
+// ── Area chart card ───────────────────────────────────────────────────────────
+.areaCard {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+
+  h2 {
+    margin: 0 0 20px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+// ── Pie charts grid ───────────────────────────────────────────────────────────
+.pieGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  @include m.md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pieCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+
+  h2 {
+    margin: 0 0 20px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.pieContent {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.pieChartWrap {
+  flex-shrink: 0;
+}
+
+.pieLegend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pieLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pieLegendIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // background set inline
+
+  .icon {
+    font-size: 13px;
+    font-variation-settings: "'FILL' 1";
+    // color set inline
+  }
+}
+
+.pieLegendInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.pieLegendRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+
+  .name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
+
+  .pct {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin-left: 4px;
+  }
+}
+
+.pieLegendBar {
+  height: 3px;
+  background: var(--surface-container);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pieLegendFill {
+  height: 100%;
+  border-radius: 2px;
+  // width + background set inline
+}
+
+// ── Empty chart ───────────────────────────────────────────────────────────────
+.emptyChart {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--on-surface-variant);
+
+  .icon {
+    font-size: 40px;
+    color: var(--outline-variant);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
