@@ -84,6 +84,19 @@ export function autoCategory(description: string, type: string): string {
     return 'income';
   }
   const d = description.toLowerCase();
+
+  // ── Taxes & fiscal payments (check first — high priority) ─────────────────
+  if (
+    /податки|asig\.?soc|fd\.?spec|impozit|tva|anaf|buget|bug\.|\/roc\/|\/rfb\/|cas\b|cass\b|contr\..*asig|sume din contr|d112|d100|d300/.test(d)
+  ) return 'taxes';
+
+  // ── SRL-specific ───────────────────────────────────────────────────────────
+  if (/comision bancă|taxa rapoarte|nota contabila/.test(d)) return 'utilities';
+  if (/dividende/.test(d)) return 'income';
+  if (/salariu →|plata salariu|plata salarii/.test(d)) return 'salary';
+  if (/restituire împrumut|imprumut/.test(d)) return 'other';
+  if (/servicii —/.test(d)) return 'other';
+
   if (/lidl|kaufland|carrefour|mega.?image|auchan|penny|profi|aliment|food|cicken|restaurant|cafe|coffee|mcdonald|kfc|pizza|burger|sushi|ko.asia|berezka|stefysia|nicoland|ice srl/.test(d)) return 'food';
   if (/uber|bolt|taxi|metro|tram|bus|cfr|tarom|wizz|ryanair|mol |rompetrol|omv|petrol|benzin|rovinieta|parking|parcare|auto.clean|metropolitan.self/.test(d)) return 'transport';
   if (/amazon|emag|altex|flanco|zara|h&m|sinsay|lc.waikiki|set.colosseum|fashion|shop|mall|ikea|rituals|premium.vaping|vaping|mihaela.flowers|flowers/.test(d)) return 'shopping';
@@ -360,14 +373,13 @@ function cleanMerchant(name: string): string {
 }
 
 // ─── BT SRL Parser ────────────────────────────────────────────────────────────
-// Company (SRL/SA) account statements from Banca Transilvania.
-// Layout is similar to personal BT but with different boilerplate and
-// company-specific transaction types (OP payments, salary runs, etc.)
+// Handles both daily and consolidated monthly BT company statements.
 
 const SRL_BOILERPLATE: RegExp[] = [
   /^(BANCA TRANSILVANIA|Info clienti|Solicitant|Tiparit|Capitalul social)/i,
   /^(Registrul|R\.B\.|C\.U\.I\.|SWIFT|Tel\.|www\.|ro\/garantarea)/i,
   /^(Fondurile|Garantare a Depozitelor|Mai multe|311\/2015)/i,
+  /^(Comisioanele aplicate|comision Transfond|comision BNR)/i,
   /^(Acest extras|24\/7|din aplicatiile)/i,
   /^(EXTRAS CONT|CONT 548|Valuta|Cod IBAN)/i,
   /^(Data\s+Descriere|Debit\s+Credit|Data$)/i,
@@ -386,18 +398,162 @@ function isSrlBoilerplate(text: string): boolean {
   return SRL_BOILERPLATE.some((re) => re.test(text.trim()));
 }
 
-const SRL_TX_START_RE = /^(Plata la POS(?:\s+non-BT cu card VISA)?|Incasare OP|Plata OP|Retragere de numerar|Rovinieta|Taxa interogare|365\b|Comision|Dobanda|Transfer intern|Plata salarii|Incasare factura)/i;
+// Transaction type headers that start a new block
+const SRL_TX_START_RE = /^(Plata la POS(?:\s+non-BT cu card VISA)?|Incasare OP|Plata OP\s+intra|Plata OP\s+inter|Plata OP\b|Retragere de numerar|Rovinieta|Taxa interogare|Taxa rapoarte|Nota contabila|365\b|Comision plata OP|Dobanda|Transfer intern|Plata salarii|Incasare factura)/i;
 
 function isSrlTxStart(desc: string): boolean {
   if (!desc) return false;
   return SRL_TX_START_RE.test(desc.trim());
 }
 
+// Lines to skip entirely (bank fees that are not real transactions)
+const SRL_SKIP_RE = /^(Comision plata OP|Comision incasare|Comision tranzactie)\b/i;
+
+// ─── Tax description builder ──────────────────────────────────────────────────
+// Parses Romanian fiscal OP payment descriptions into readable labels.
+// Raw format example:
+//   /ROC/.;/RFB///;BUG. ASIG.SOC. SI FD.SPEC. 2.2026;17;NICKONIX TECH SRL
+//   /ROC/.;/RFB///;IMPOZIT VENIT 03.2026;17;...
+//   /ROC/.;/RFB///;TVA TRIM 1 2026;17;...
+
+function buildTaxDescription(raw: string): string {
+  // The fiscal description is usually the 3rd semicolon-separated segment
+  // after stripping the /ROC/ and /RFB/ routing prefixes.
+  const cleaned = raw
+    .replace(/\/ROC\/[^;]*;/gi, '')
+    .replace(/\/RFB\/[^;]*/gi, '')
+    .replace(/^[;/\s]+/, '')
+    .trim();
+
+  // Take the first meaningful segment (before the next semicolon or end)
+  const segment = cleaned.split(';')[0]?.trim() ?? cleaned;
+
+  // Map common Romanian fiscal descriptions to readable Ukrainian labels
+  const s = segment.toUpperCase();
+
+  if (/ASIG\.?SOC/.test(s) && /FD\.?SPEC/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — CAS + Fond Special${period}`;
+  }
+  if (/ASIG\.?SOC/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — CAS (asig. sociale)${period}`;
+  }
+  if (/FD\.?SPEC/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — Fond Special${period}`;
+  }
+  if (/IMPOZIT.VENIT/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — Impozit venit${period}`;
+  }
+  if (/IMPOZIT.PROFIT/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — Impozit profit${period}`;
+  }
+  if (/\bTVA\b/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — TVA${period}`;
+  }
+  if (/\bCASS\b/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — CASS${period}`;
+  }
+  if (/\bCAS\b/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — CAS${period}`;
+  }
+  if (/BUG\./.test(s) || /BUGET/.test(s)) {
+    const period = extractFiscalPeriod(segment);
+    return `Податки — Buget stat${period}`;
+  }
+
+  // Fallback: clean up and return the segment as-is
+  return `Податки — ${segment.slice(0, 60)}`;
+}
+
+function extractFiscalPeriod(text: string): string {
+  // Match patterns like "2.2026", "03.2026", "TRIM 1 2026", "T1 2026"
+  const monthly = text.match(/\b(\d{1,2})[.\-/](\d{4})\b/);
+  if (monthly) {
+    const month = parseInt(monthly[1] ?? '0', 10);
+    const year  = monthly[2] ?? '';
+    const monthName = new Date(parseInt(year), month - 1, 1)
+      .toLocaleDateString('uk-UA', { month: 'long' });
+    return ` (${monthName} ${year})`;
+  }
+  const quarterly = text.match(/TRIM(?:ESTRU)?\s*(\d)\s+(\d{4})/i);
+  if (quarterly) return ` (T${quarterly[1]} ${quarterly[2]})`;
+  const year = text.match(/\b(20\d{2})\b/);
+  if (year) return ` (${year[1]})`;
+  return '';
+}
+
 function buildSrlDescription(raw: string, type: string): string {
-  // Salary payment
+  // Tax / fiscal payments — /ROC/ or /RFB/ routing codes, or fiscal keywords
+  if (/\/roc\/|\/rfb\/|asig\.?soc|fd\.?spec|bug\.|impozit|contr\..*asig|sume din contr/i.test(raw)) {
+    return buildTaxDescription(raw);
+  }
+
+  // Bank fee / report charge (Nota contabila, Taxa rapoarte)
+  if (/Nota contabila|Taxa rapoarte/i.test(raw)) {
+    const detail = raw.replace(/Nota contabila individuala\s*/i, '')
+                      .replace(/REF:\s*\S+/gi, '')
+                      .trim();
+    return detail ? `Comision bancă — ${detail.slice(0, 60)}` : 'Comision bancă';
+  }
+
+  // Salary payment (outgoing)
   if (/Plata salarii/i.test(raw)) return 'Plata salarii';
 
-  // OP payment (outgoing)
+  // Intra-bank OP (same bank transfers) — salary, dividends, loans
+  if (/Plata OP\s+intra/i.test(raw)) {
+    // Dividend payment
+    if (/Dividende/i.test(raw)) {
+      const to = raw.match(/;\s*([^;]+?)\s*;RO\d{2}BTR/i);
+      return to ? `Dividende → ${(to[1] ?? '').trim()}` : 'Dividende nete';
+    }
+    // Salary
+    if (/salariu/i.test(raw)) {
+      const to = raw.match(/;\s*([^;]+?)\s*;RO\d{2}BTR/i);
+      return to ? `Salariu → ${(to[1] ?? '').trim()}` : 'Plata salariu';
+    }
+    // Loan repayment
+    if (/imprumut|restituire/i.test(raw)) {
+      const to = raw.match(/;\s*([^;]+?)\s*;RO\d{2}BTR/i);
+      return to ? `Restituire împrumut → ${(to[1] ?? '').trim()}` : 'Restituire împrumut';
+    }
+    // Generic intra OP
+    const body = raw.replace(/Plata OP\s+intra\s*-\s*canal electronic\s*/i, '')
+                    .replace(/;RO\d{2}[A-Z]+\S+/gi, '')
+                    .replace(/;BTR[A-Z0-9]+/gi, '')
+                    .replace(/REF:\s*\S+/gi, '')
+                    .replace(/;+/g, ' ')
+                    .trim();
+    return body.slice(0, 80) || 'Plata OP intra';
+  }
+
+  // Inter-bank OP (different bank) — services, taxes already handled above
+  if (/Plata OP\s+inter/i.test(raw)) {
+    // /ROC/ service payments (not tax)
+    if (/\/roc\/.*servicii/i.test(raw)) {
+      const detail = raw.replace(/\/ROC\/[^;]*/gi, '')
+                        .replace(/;[A-Z0-9]{8,};/g, ';')
+                        .replace(/;RO\d{2}[A-Z]+\S+/gi, '')
+                        .replace(/REF:\s*\S+/gi, '')
+                        .replace(/;+/g, ' ')
+                        .trim();
+      return detail ? `Servicii — ${detail.slice(0, 60)}` : 'Plata servicii';
+    }
+    const body = raw.replace(/Plata OP\s+inter\s*-\s*canal electronic\s*/i, '')
+                    .replace(/;RO\d{2}[A-Z]+\S+/gi, '')
+                    .replace(/REF:\s*\S+/gi, '')
+                    .replace(/;+/g, ' ')
+                    .trim();
+    return body.slice(0, 80) || 'Plata OP inter';
+  }
+
+  // Generic OP payment
   if (/Plata OP/i.test(raw)) {
     const beneficiary = raw.match(/(?:Beneficiar|catre)[:\s]+([^;]+)/i);
     if (beneficiary) return `Plata OP – ${(beneficiary[1] ?? '').trim().slice(0, 60)}`;
@@ -406,8 +562,12 @@ function buildSrlDescription(raw: string, type: string): string {
 
   // OP income
   if (/Incasare OP/i.test(raw)) {
+    // Has CIF — extract company name after CIF segment
     const cifMatch = raw.match(/C\.I\.F\.[^;]*;([^;]+);/i);
     if (cifMatch) return (cifMatch[1] ?? '').trim().slice(0, 80);
+    // Has /ROC/ routing — extract sender name
+    const rocMatch = raw.match(/\/ROC\/[^;]*;([^;]+);RO\d{2}/i);
+    if (rocMatch) return (rocMatch[1] ?? '').trim().slice(0, 80);
     return raw.replace(/Incasare OP.*?canal electronic\s*/i, '').trim().slice(0, 80);
   }
 
@@ -417,7 +577,7 @@ function buildSrlDescription(raw: string, type: string): string {
     return inv ? `Incasare factura ${inv[1]}` : 'Incasare factura';
   }
 
-  // Delegate to shared BT description builder for common types
+  // Delegate to shared BT description builder for POS, ATM, Rovinieta etc.
   return buildDescription(raw, type);
 }
 
@@ -518,6 +678,8 @@ function parseBT_SRL(pages: PdfPage[]): NewTransaction[] {
       if (/^(RULAJ|SOLD|TOTAL DISPONIBIL|Fonduri proprii|Credit neutilizat)/i.test(fullDesc)) continue;
       if (!block.debit && !block.credit) continue;
       if (/^Round Up/i.test(fullDesc)) continue;
+      // Skip bank commission lines (Comision plata OP — 0.51 RON fees)
+      if (SRL_SKIP_RE.test(fullDesc.trim())) continue;
 
       const amount = block.credit ?? block.debit;
       if (!amount || amount <= 0) continue;
