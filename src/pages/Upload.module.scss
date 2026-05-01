@@ -15,6 +15,33 @@
   }
 }
 
+// ── Account badge ─────────────────────────────────────────────────────────────
+.accountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  margin-bottom: 20px;
+
+  span.material-symbols-outlined {
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.accountBadgeSep {
+  color: var(--outline);
+}
+
+.accountBadgeType {
+  color: var(--outline);
+}
+
 // ── Step indicator ────────────────────────────────────────────────────────────
 .steps {
   display: flex;

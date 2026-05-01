@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
@@ -36,19 +36,75 @@ export default function Overview({ onMenuClick }: OverviewProps) {
   }, [transactions, totals, convertAmount]);
 
   const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const currentMonthTxs = useMemo(
-    () => transactions.filter((t) => t.date?.startsWith(currentMonthKey)),
-    [transactions, currentMonthKey],
+
+  // ── All months that have data, sorted newest first ─────────────────────────
+  // Always include the current calendar month so the navigator starts there.
+  const availableMonths = useMemo(() => {
+    const set = new Set<string>();
+    set.add(currentMonthKey); // always present so user starts on current month
+    transactions.forEach((t) => {
+      const m = t.date?.slice(0, 7);
+      if (m) set.add(m);
+    });
+    return [...set].sort((a, b) => b.localeCompare(a)); // newest first
+  }, [transactions, currentMonthKey]);
+
+  // Default: current calendar month. User can navigate to months with data.
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
+
+  // Resolve the active month: always use selectedMonth (it's always valid
+  // because currentMonthKey is always in availableMonths).
+  const activeMonthKey = selectedMonth || currentMonthKey;
+
+  // Which months actually have transactions (for dot indicators)
+  const monthsWithData = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach((t) => {
+      const m = t.date?.slice(0, 7);
+      if (m) set.add(m);
+    });
+    return set;
+  }, [transactions]);
+
+  const activeMonthLabel = useMemo(() => {
+    return new Date(activeMonthKey + '-01').toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+  }, [activeMonthKey]);
+
+  const activeMonthIdx = availableMonths.indexOf(activeMonthKey);
+
+  const goToPrev = () => {
+    const next = availableMonths[activeMonthIdx + 1];
+    if (next) setSelectedMonth(next);
+  };
+  const goToNext = () => {
+    const next = availableMonths[activeMonthIdx - 1];
+    if (next) setSelectedMonth(next);
+  };
+
+  // ── Transactions for the selected month ────────────────────────────────────
+  const monthTxs = useMemo(
+    () => transactions.filter((t) => t.date?.startsWith(activeMonthKey)),
+    [transactions, activeMonthKey],
+  );
+
+  const monthIncome = useMemo(
+    () => monthTxs.filter((t) => t.type === 'income').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0),
+    [monthTxs, convertAmount],
+  );
+
+  const monthExpenses = useMemo(
+    () => monthTxs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0),
+    [monthTxs, convertAmount],
   );
 
   const categorySpend = useMemo(() => {
     const map: Record<string, number> = {};
-    currentMonthTxs.filter((t) => t.type === 'expense').forEach((tx) => {
+    monthTxs.filter((t) => t.type === 'expense').forEach((tx) => {
       const cat = tx.category || 'other';
-      map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, tx.currency || 'RON');
+      map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
     });
     return map;
-  }, [currentMonthTxs, convertAmount]);
+  }, [monthTxs, convertAmount]);
 
   const monthlyChartData = useMemo(() => {
     const groups = groupByMonth(transactions);
@@ -56,8 +112,8 @@ export default function Overview({ onMenuClick }: OverviewProps) {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-6)
       .map(([month, txs]) => {
-        const income  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
-        const expense = txs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + convertAmount(t.amount || 0, t.currency || 'RON'), 0);
+        const income  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
+        const expense = txs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
         return {
           month: new Date(month + '-01').toLocaleDateString('uk-UA', { month: 'short' }),
           Дохід: Math.round(income),
@@ -89,6 +145,41 @@ export default function Overview({ onMenuClick }: OverviewProps) {
       <TopBar title="Огляд" onMenuClick={onMenuClick} />
       <div className={`page-content ${s.page}`}>
 
+        {/* Month navigator */}
+        {availableMonths.length > 0 && (
+          <div className={s.monthNav}>
+            <button
+              className={s.monthNavBtn}
+              onClick={goToPrev}
+              disabled={activeMonthIdx >= availableMonths.length - 1}
+              title="Попередній місяць"
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            <span className={s.monthNavLabel}>{activeMonthLabel}</span>
+            <button
+              className={s.monthNavBtn}
+              onClick={goToNext}
+              disabled={activeMonthIdx <= 0}
+              title="Наступний місяць"
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+            {availableMonths.length > 1 && (
+              <div className={s.monthDots}>
+                {availableMonths.map((m) => (
+                  <button
+                    key={m}
+                    className={`${s.monthDot}${m === activeMonthKey ? ` ${s.active}` : ''}${!monthsWithData.has(m) ? ` ${s.empty}` : ''}`}
+                    onClick={() => setSelectedMonth(m)}
+                    title={new Date(m + '-01').toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Stat cards */}
         <div className={s.statsGrid}>
           <StatCard
@@ -98,26 +189,20 @@ export default function Overview({ onMenuClick }: OverviewProps) {
             color="var(--primary)"
           />
           <StatCard
-            label="Дохід цього місяця"
-            value={fmt(convertAmount(
-              currentMonthTxs.filter((t) => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0),
-              'RON',
-            ))}
+            label="Дохід"
+            value={fmt(monthIncome)}
             icon="trending_up"
             color="var(--secondary)"
           />
           <StatCard
-            label="Витрати цього місяця"
-            value={fmt(convertAmount(
-              currentMonthTxs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0),
-              'RON',
-            ))}
+            label="Витрати"
+            value={fmt(monthExpenses)}
             icon="trending_down"
             color="var(--tertiary)"
           />
           <StatCard
             label="Транзакцій"
-            value={transactions.length}
+            value={monthTxs.length}
             icon="receipt_long"
             color="#7c3aed"
           />
@@ -156,9 +241,9 @@ export default function Overview({ onMenuClick }: OverviewProps) {
 
           {/* Top categories */}
           <div className={`whisper-shadow ${s.topCatCard}`}>
-            <h2>Топ витрат цього місяця</h2>
+            <h2>Топ витрат</h2>
             {topCategories.length === 0 ? (
-              <p className={s.topCatEmpty}>Немає витрат цього місяця</p>
+              <p className={s.topCatEmpty}>Немає витрат за {activeMonthLabel}</p>
             ) : (
               <div className={s.topCatList}>
                 {topCategories.map((cat) => (
@@ -206,7 +291,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
               <tbody>
                 {recentTxs.map((tx) => {
                   const cat = resolveCategory(tx.category, categories);
-                  const amt = convertAmount(tx.amount || 0, tx.currency || 'RON');
+                  const amt = convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
                   return (
                     <tr key={tx.id} className={s.recentRow}>
                       <td className={s.recentTd}>

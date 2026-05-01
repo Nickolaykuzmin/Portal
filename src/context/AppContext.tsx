@@ -1,4 +1,4 @@
-import { createContext, useEffect, useRef, useState, useCallback } from 'react';
+import { createContext, useEffect, useRef, useState, useCallback, useContext } from 'react';
 import {
   collection,
   addDoc,
@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
+import { AuthContext } from './AuthContext';
 import type { Transaction, Category, NewTransaction, NewCategory, MergeResult, Currency } from '../types';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
@@ -47,6 +48,10 @@ const FALLBACK_RON_TO_EUR = 0.201;
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const authCtx = useContext(AuthContext);
+  const user          = authCtx?.user ?? null;
+  const activeAccount = authCtx?.activeAccount;
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories,   setCategories]   = useState<Category[]>(DEFAULT_CATEGORIES);
   const [txLoading,    setTxLoading]    = useState(true);
@@ -55,14 +60,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [exchangeRate, setExchangeRate] = useState(FALLBACK_RON_TO_EUR);
   const seededRef = useRef(false);
 
-  // Write only the default categories that are missing in Firestore
-  async function syncDefaultCategories(existingIds: string[]) {
+  // ── Firestore path helpers ─────────────────────────────────────────────────
+  // When user is logged in: users/{uid}/{accountId}/transactions
+  // When not logged in (legacy): transactions (root collection)
+  const txCollectionPath = useCallback((): string => {
+    if (user && activeAccount) {
+      return `users/${user.uid}/accounts/${activeAccount.id}/transactions`;
+    }
+    return 'transactions';
+  }, [user, activeAccount]);
+
+  const catCollectionPath = useCallback((): string => {
+    if (user && activeAccount) {
+      return `users/${user.uid}/accounts/${activeAccount.id}/categories`;
+    }
+    return 'categories';
+  }, [user, activeAccount]);
+
+  // ── Default categories sync ────────────────────────────────────────────────
+  const syncDefaultCategories = useCallback(async (existingIds: string[]) => {
     try {
       const missing = DEFAULT_CATEGORIES.filter((cat) => !existingIds.includes(cat.id));
       if (missing.length === 0) return;
+      const catPath = catCollectionPath();
       await Promise.all(
         missing.map((cat) =>
-          setDoc(doc(db, 'categories', cat.id), {
+          setDoc(doc(db, catPath, cat.id), {
             name:      cat.name,
             icon:      cat.icon,
             color:     cat.color,
@@ -75,7 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Sync categories error:', e);
     }
-  }
+  }, [catCollectionPath]);
 
   // Fetch live EUR/RON rate once on mount
   useEffect(() => {
@@ -100,7 +123,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Transactions listener ──────────────────────────────────────────────────
   useEffect(() => {
-    const q = query(collection(db, 'transactions'), orderBy('date', 'desc'));
+    // Reset state when account/user changes
+    setTransactions([]);
+    setTxLoading(true);
+
+    const path = txCollectionPath();
+    const q = query(collection(db, path), orderBy('date', 'desc'));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -113,11 +141,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
     );
     return unsub;
-  }, []);
+  }, [txCollectionPath]);
 
   // ── Categories listener ────────────────────────────────────────────────────
   useEffect(() => {
-    const q = query(collection(db, 'categories'), orderBy('name'));
+    setCategories(DEFAULT_CATEGORIES);
+    setCatLoading(true);
+    seededRef.current = false;
+
+    const path = catCollectionPath();
+    const q = query(collection(db, path), orderBy('name'));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -136,15 +169,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
     );
     return unsub;
-  }, []);
+  }, [catCollectionPath, syncDefaultCategories]);
 
   // ── Transaction actions ────────────────────────────────────────────────────
   const addTransaction = (tx: NewTransaction) =>
-    addDoc(collection(db, 'transactions'), { ...tx, createdAt: serverTimestamp() });
+    addDoc(collection(db, txCollectionPath()), { ...tx, createdAt: serverTimestamp() });
 
   const addTransactions = (list: NewTransaction[]) =>
     Promise.all(list.map((tx) =>
-      addDoc(collection(db, 'transactions'), { ...tx, createdAt: serverTimestamp() }),
+      addDoc(collection(db, txCollectionPath()), { ...tx, createdAt: serverTimestamp() }),
     ));
 
   const mergeTransactions = async (list: NewTransaction[]): Promise<MergeResult> => {
@@ -157,27 +190,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     if (newOnly.length > 0) {
       await Promise.all(newOnly.map((tx) =>
-        addDoc(collection(db, 'transactions'), { ...tx, createdAt: serverTimestamp() }),
+        addDoc(collection(db, txCollectionPath()), { ...tx, createdAt: serverTimestamp() }),
       ));
     }
     return { added: newOnly.length, skipped: list.length - newOnly.length };
   };
 
   const updateTransaction = (id: string, data: Partial<Transaction>) =>
-    updateDoc(doc(db, 'transactions', id), data as Record<string, unknown>);
+    updateDoc(doc(db, txCollectionPath(), id), data as Record<string, unknown>);
 
   const deleteTransaction = (id: string) =>
-    deleteDoc(doc(db, 'transactions', id));
+    deleteDoc(doc(db, txCollectionPath(), id));
 
   // ── Category actions ───────────────────────────────────────────────────────
   const addCategory = (cat: NewCategory) =>
-    addDoc(collection(db, 'categories'), { ...cat, isDefault: false, createdAt: serverTimestamp() });
+    addDoc(collection(db, catCollectionPath()), { ...cat, isDefault: false, createdAt: serverTimestamp() });
 
   const updateCategory = (id: string, data: Partial<Category>) =>
-    updateDoc(doc(db, 'categories', id), data as Record<string, unknown>);
+    updateDoc(doc(db, catCollectionPath(), id), data as Record<string, unknown>);
 
   const deleteCategory = (id: string) =>
-    deleteDoc(doc(db, 'categories', id));
+    deleteDoc(doc(db, catCollectionPath(), id));
 
   return (
     <AppContext.Provider value={{

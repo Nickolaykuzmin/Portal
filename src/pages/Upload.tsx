@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { parseStatement, autoCategory } from '../utils/pdfParser';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
+import { useAuth } from '../hooks/useAuth';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import TopBar from '../components/TopBar';
 import CashSplitModal from '../components/CashSplitModal';
@@ -18,6 +19,7 @@ interface UploadProps {
 export default function Upload({ onMenuClick }: UploadProps) {
   const { addTransactions, mergeTransactions } = useTransactions();
   const { categories } = useCategories();
+  const { activeAccount } = useAuth();
   const [step, setStep] = useState<Step>('upload');
   const [dragging, setDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -147,6 +149,18 @@ export default function Upload({ onMenuClick }: UploadProps) {
       <TopBar title="Завантажити Statement" onMenuClick={onMenuClick} />
       <div className={s.page}>
 
+        {/* Account badge */}
+        <div className={s.accountBadge}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            {activeAccount.type === 'srl' ? 'business' : 'person'}
+          </span>
+          <span>{activeAccount.label}</span>
+          <span className={s.accountBadgeSep}>·</span>
+          <span className={s.accountBadgeType}>
+            {activeAccount.type === 'srl' ? 'SRL рахунок' : 'Особистий рахунок'}
+          </span>
+        </div>
+
         {/* Step indicator */}
         <div className={s.steps}>
           {[
@@ -214,7 +228,9 @@ export default function Upload({ onMenuClick }: UploadProps) {
                   <span className={`material-symbols-outlined ${s.dropIcon}`}>upload_file</span>
                   <p className={s.dropTitle}>Перетягніть PDF або натисніть для вибору</p>
                   <p className={s.dropSub}>
-                    Підтримуються виписки BCR, BRD, ING, Raiffeisen, Banca Transilvania
+                    {activeAccount.type === 'srl'
+                      ? 'Підтримуються виписки BT SRL, BCR Business, ING Business'
+                      : 'Підтримуються виписки BCR, BRD, ING, Raiffeisen, Banca Transilvania'}
                   </p>
                   <div className={s.chooseBtn}>
                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>folder_open</span>
@@ -227,9 +243,16 @@ export default function Upload({ onMenuClick }: UploadProps) {
             {error && <div className={s.error}>⚠️ {error}</div>}
 
             <div className={`whisper-shadow ${s.banksCard}`}>
-              <h3>Підтримувані банки Румунії</h3>
+              <h3>
+                {activeAccount.type === 'srl'
+                  ? 'Підтримувані банки для SRL'
+                  : 'Підтримувані банки Румунії'}
+              </h3>
               <div className={s.banksGrid}>
-                {['BCR', 'BRD', 'ING Bank', 'Raiffeisen', 'Banca Transilvania', 'UniCredit'].map((bank) => (
+                {(activeAccount.type === 'srl'
+                  ? ['BT SRL', 'BCR Business', 'ING Business', 'Raiffeisen Business', 'UniCredit Business']
+                  : ['BCR', 'BRD', 'ING Bank', 'Raiffeisen', 'Banca Transilvania', 'UniCredit']
+                ).map((bank) => (
                   <div key={bank} className={s.bankItem}>
                     <span className={`material-symbols-outlined ${s.icon}`}>account_balance</span>
                     <span>{bank}</span>

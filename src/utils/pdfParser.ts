@@ -31,8 +31,15 @@ export async function extractTextFromPDF(file: File): Promise<PdfPage[]> {
 
 // ─── Bank detection ───────────────────────────────────────────────────────────
 
-function detectBank(text: string): string {
+export type BankId = 'BT' | 'BT_SRL' | 'BCR' | 'BRD' | 'ING' | 'Raiffeisen' | 'UniCredit' | 'Unknown';
+
+function detectBank(text: string): BankId {
   const t = text.toLowerCase();
+  // BT SRL: company account statement — detected by SRL/SA in client name + BT markers
+  if (
+    (t.includes('banca transilvania') || t.includes('btrlro22')) &&
+    (t.includes(' srl') || t.includes(' s.r.l') || t.includes(' sa ') || t.includes(' s.a.'))
+  ) return 'BT_SRL';
   if (t.includes('banca transilvania') || t.includes('btrlro22')) return 'BT';
   if (t.includes('bcr') || t.includes('banca comerciala romana')) return 'BCR';
   if (t.includes('brd') || t.includes('groupe societe generale')) return 'BRD';
@@ -72,7 +79,8 @@ function parseAmount(str: string | null | undefined): number | null {
 export function autoCategory(description: string, type: string): string {
   if (type === 'income') {
     const d = description.toLowerCase();
-    if (/salar|salary|wage/.test(d)) return 'salary';
+    if (/salar|salary|wage|plata salarii/.test(d)) return 'salary';
+    if (/incasare factura|incasare op/.test(d)) return 'income';
     return 'income';
   }
   const d = description.toLowerCase();
@@ -86,6 +94,9 @@ export function autoCategory(description: string, type: string): string {
   if (/scoala|school|universitate|university|curs|course/.test(d)) return 'education';
   if (/taxa|comision|interogare/.test(d)) return 'utilities';
   if (/atm|retragere|numerar/.test(d)) return 'cash';
+  // SRL-specific
+  if (/plata salarii/.test(d)) return 'salary';
+  if (/plata op/.test(d)) return 'other';
   return 'other';
 }
 
@@ -348,6 +359,201 @@ function cleanMerchant(name: string): string {
     .slice(0, 60);
 }
 
+// ─── BT SRL Parser ────────────────────────────────────────────────────────────
+// Company (SRL/SA) account statements from Banca Transilvania.
+// Layout is similar to personal BT but with different boilerplate and
+// company-specific transaction types (OP payments, salary runs, etc.)
+
+const SRL_BOILERPLATE: RegExp[] = [
+  /^(BANCA TRANSILVANIA|Info clienti|Solicitant|Tiparit|Capitalul social)/i,
+  /^(Registrul|R\.B\.|C\.U\.I\.|SWIFT|Tel\.|www\.|ro\/garantarea)/i,
+  /^(Fondurile|Garantare a Depozitelor|Mai multe|311\/2015)/i,
+  /^(Acest extras|24\/7|din aplicatiile)/i,
+  /^(EXTRAS CONT|CONT 548|Valuta|Cod IBAN)/i,
+  /^(Data\s+Descriere|Debit\s+Credit|Data$)/i,
+  /^(SOLD ANTERIOR|SOLD FINAL|RULAJ ZI|RULAJ TOTAL|TOTAL DISPONIBIL)/i,
+  /^(din care|Fonduri proprii|Credit neutilizat|SUME BLOCATE)/i,
+  /^(La data curenta|aferenta tranzactiei)/i,
+  /^-\s*\d+[.,]\d+\s*RON\s+aferenta/i,
+  /^\d+\s*\/\s*\d+$/,
+  /^(Client:|CUI:|Denumire|Adresa|Localitate|Judet|Tara)/i,
+  /^(Nr\. Reg\.|Capital social|Cod fiscal)/i,
+  /^$/,
+];
+
+function isSrlBoilerplate(text: string): boolean {
+  if (!text) return true;
+  return SRL_BOILERPLATE.some((re) => re.test(text.trim()));
+}
+
+const SRL_TX_START_RE = /^(Plata la POS(?:\s+non-BT cu card VISA)?|Incasare OP|Plata OP|Retragere de numerar|Rovinieta|Taxa interogare|365\b|Comision|Dobanda|Transfer intern|Plata salarii|Incasare factura)/i;
+
+function isSrlTxStart(desc: string): boolean {
+  if (!desc) return false;
+  return SRL_TX_START_RE.test(desc.trim());
+}
+
+function buildSrlDescription(raw: string, type: string): string {
+  // Salary payment
+  if (/Plata salarii/i.test(raw)) return 'Plata salarii';
+
+  // OP payment (outgoing)
+  if (/Plata OP/i.test(raw)) {
+    const beneficiary = raw.match(/(?:Beneficiar|catre)[:\s]+([^;]+)/i);
+    if (beneficiary) return `Plata OP – ${(beneficiary[1] ?? '').trim().slice(0, 60)}`;
+    return raw.replace(/Plata OP.*?canal electronic\s*/i, '').trim().slice(0, 80);
+  }
+
+  // OP income
+  if (/Incasare OP/i.test(raw)) {
+    const cifMatch = raw.match(/C\.I\.F\.[^;]*;([^;]+);/i);
+    if (cifMatch) return (cifMatch[1] ?? '').trim().slice(0, 80);
+    return raw.replace(/Incasare OP.*?canal electronic\s*/i, '').trim().slice(0, 80);
+  }
+
+  // Invoice collection
+  if (/Incasare factura/i.test(raw)) {
+    const inv = raw.match(/factura\s+(\S+)/i);
+    return inv ? `Incasare factura ${inv[1]}` : 'Incasare factura';
+  }
+
+  // Delegate to shared BT description builder for common types
+  return buildDescription(raw, type);
+}
+
+function parseBT_SRL(pages: PdfPage[]): NewTransaction[] {
+  const transactions: (NewTransaction & { bankBalance?: number })[] = [];
+  let lastKnownBalance: number | null = null;
+
+  for (const pageItems of pages) {
+    if (!pageItems.length) continue;
+
+    let DEBIT_X  = 452;
+    let CREDIT_X = 545;
+
+    const yGroups = groupByY(pageItems, 2);
+
+    // Detect column positions from header row
+    for (const group of yGroups) {
+      const texts = group.map((i) => i.text);
+      if (texts.includes('Debit') && texts.includes('Credit')) {
+        const debitItem  = group.find((i) => i.text === 'Debit');
+        const creditItem = group.find((i) => i.text === 'Credit');
+        if (debitItem)  DEBIT_X  = debitItem.x;
+        if (creditItem) CREDIT_X = creditItem.x;
+        break;
+      }
+    }
+
+    const COL_TOL = 40;
+
+    const rows: BtRow[] = yGroups
+      .map((items) => {
+        const sorted = [...items].sort((a, b) => a.x - b.x);
+        const dateItems   = sorted.filter((i) => i.x < 80 && /^\d{2}\/\d{2}\/\d{4}$/.test(i.text));
+        const descItems   = sorted.filter((i) => i.x >= 80 && i.x < 420 && i.text.length > 0);
+        const debitItems  = sorted.filter((i) => Math.abs(i.x - DEBIT_X)  <= COL_TOL);
+        const creditItems = sorted.filter((i) => Math.abs(i.x - CREDIT_X) <= COL_TOL);
+
+        const debitAmt  = debitItems.reduce<number | null>((v, i) => v ?? parseAmount(i.text), null);
+        const creditAmt = creditItems.reduce<number | null>((v, i) => v ?? parseAmount(i.text), null);
+
+        return {
+          y:      items[0]?.y ?? 0,
+          date:   dateItems[0]?.text ?? null,
+          desc:   descItems.map((i) => i.text).join(' ').trim(),
+          debit:  debitAmt,
+          credit: creditAmt,
+        };
+      })
+      .filter((r) => r.desc || r.date || r.debit !== null || r.credit !== null);
+
+    rows.sort((a, b) => b.y - a.y);
+
+    const blocks: BtBlock[] = [];
+    let cur: BtBlock | null = null;
+    let curDate: string | null = null;
+
+    for (const row of rows) {
+      if (isSrlBoilerplate(row.desc)) continue;
+
+      const isTxStart = isSrlTxStart(row.desc);
+
+      if (row.date) {
+        if (cur) blocks.push(cur);
+        curDate = btDateToISO(row.date);
+        cur = {
+          date:   curDate,
+          lines:  row.desc ? [row.desc] : [],
+          debit:  row.debit,
+          credit: row.credit,
+        };
+      } else if (isTxStart && cur) {
+        blocks.push(cur);
+        cur = {
+          date:   curDate,
+          lines:  [row.desc],
+          debit:  row.debit,
+          credit: row.credit,
+        };
+      } else if (cur) {
+        if (row.desc) cur.lines.push(row.desc);
+        if (row.debit  !== null && cur.debit  === null) cur.debit  = row.debit;
+        if (row.credit !== null && cur.credit === null) cur.credit = row.credit;
+      }
+    }
+    if (cur) blocks.push(cur);
+
+    // Extract final balance
+    for (const row of rows) {
+      if (/SOLD FINAL CONT/i.test(row.desc)) {
+        const balAmt = row.credit ?? row.debit;
+        if (balAmt && balAmt > 0) lastKnownBalance = balAmt;
+      }
+    }
+
+    for (const block of blocks) {
+      const fullDesc = block.lines.join(' ');
+
+      if (/^(RULAJ|SOLD|TOTAL DISPONIBIL|Fonduri proprii|Credit neutilizat)/i.test(fullDesc)) continue;
+      if (!block.debit && !block.credit) continue;
+      if (/^Round Up/i.test(fullDesc)) continue;
+
+      const amount = block.credit ?? block.debit;
+      if (!amount || amount <= 0) continue;
+
+      const type        = block.credit ? 'income' : 'expense';
+      const description = buildSrlDescription(fullDesc, type);
+      const isCashWithdrawal = /Retragere de numerar/i.test(fullDesc);
+
+      transactions.push({
+        date:     block.date ?? '',
+        description,
+        amount,
+        type,
+        category: autoCategory(description, type),
+        bank:     'BT SRL',
+        currency: 'RON',
+        source:   'pdf',
+        ...(isCashWithdrawal && { isCashWithdrawal: true }),
+      });
+    }
+  }
+
+  if (lastKnownBalance !== null && transactions.length > 0) {
+    const sorted = [...transactions].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (sorted[0]) sorted[0].bankBalance = lastKnownBalance;
+  }
+
+  const seen = new Set<string>();
+  return transactions.filter((tx) => {
+    const key = `${tx.date}|${tx.amount}|${tx.description.slice(0, 20)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 // ─── Generic fallback ─────────────────────────────────────────────────────────
 
 function parseGeneric(pages: PdfPage[]): NewTransaction[] {
@@ -386,7 +592,14 @@ export async function parseStatement(file: File): Promise<ParseResult> {
   const fullText = pages.map((p) => p.map((i) => i.text).join(' ')).join('\n');
   const bank = detectBank(fullText);
 
-  let transactions: NewTransaction[] = bank === 'BT' ? parseBT(pages) : parseGeneric(pages);
+  let transactions: NewTransaction[];
+  if (bank === 'BT_SRL') {
+    transactions = parseBT_SRL(pages);
+  } else if (bank === 'BT') {
+    transactions = parseBT(pages);
+  } else {
+    transactions = parseGeneric(pages);
+  }
 
   console.log(`[Parser] bank=${bank}, found=${transactions.length}`);
 

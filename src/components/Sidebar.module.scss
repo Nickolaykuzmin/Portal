@@ -22,6 +22,7 @@
   flex-direction: column;
   padding: 20px 12px;
   z-index: 100;
+  overflow-y: auto;
 
   @include m.md {
     transform: translateX(-100%);
@@ -38,7 +39,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
   padding: 4px 8px;
 }
 
@@ -103,6 +104,138 @@
   .icon {
     font-size: 18px;
     color: var(--on-surface-variant);
+  }
+}
+
+// ── Account switcher ──────────────────────────────────────────────────────────
+.accountSwitcher {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.accountBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--surface-container);
+    border-color: var(--outline);
+  }
+}
+
+.accountIcon {
+  font-size: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-variation-settings: "'FILL' 1";
+
+  &.personal {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+  }
+
+  &.srl {
+    background: rgba(5, 150, 105, 0.12);
+    color: #059669;
+  }
+}
+
+.accountInfo {
+  flex: 1;
+  text-align: left;
+
+  .accountLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--on-surface);
+    line-height: 1.2;
+  }
+
+  .accountType {
+    font-size: 10px;
+    color: var(--outline);
+    margin-top: 1px;
+  }
+}
+
+.chevron {
+  font-size: 18px;
+  color: var(--outline);
+  transition: transform 0.2s ease;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--outline-variant);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.accountMenuItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  text-align: left;
+
+  &:hover {
+    background: var(--surface-container-low);
+  }
+
+  &.active {
+    background: var(--surface-container-low);
+  }
+
+  .menuIcon {
+    font-size: 18px;
+    color: var(--on-surface-variant);
+    font-variation-settings: "'FILL' 1";
+  }
+
+  .menuLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface);
+    line-height: 1.2;
+  }
+
+  .menuSub {
+    font-size: 11px;
+    color: var(--outline);
+  }
+
+  .checkIcon {
+    margin-left: auto;
+    font-size: 16px;
+    color: var(--primary);
   }
 }
 
@@ -193,15 +326,60 @@
   }
 }
 
+.avatarImg {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .footerInfo {
+  flex: 1;
+  min-width: 0;
+
   .title {
     font-size: 12px;
     font-weight: 600;
     color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .sub {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--outline);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.logoutBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(220, 38, 38, 0.1);
+
+    .icon {
+      color: #dc2626;
+    }
+  }
+
+  .icon {
+    font-size: 16px;
+    color: var(--outline);
+    transition: color 0.15s ease;
   }
 }

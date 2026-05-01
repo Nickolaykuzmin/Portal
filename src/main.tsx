@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 
 // StrictMode is intentionally omitted — it double-mounts components which
@@ -9,7 +10,9 @@ const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('Root element not found');
 
 createRoot(rootEl).render(
-  <AppProvider>
-    <App />
-  </AppProvider>,
+  <AuthProvider>
+    <AppProvider>
+      <App />
+    </AppProvider>
+  </AuthProvider>,
 );

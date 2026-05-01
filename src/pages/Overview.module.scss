@@ -21,6 +21,88 @@
   color: var(--on-surface-variant);
 }
 
+// ── Month navigator ───────────────────────────────────────────────────────────
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.monthNavBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+
+  span {
+    font-size: 20px;
+    color: var(--on-surface-variant);
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--surface-container-low);
+    border-color: var(--outline);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.monthNavLabel {
+  font-family: v.$font-display;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-surface);
+  min-width: 160px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.monthDots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+}
+
+.monthDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  background: var(--outline-variant);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--outline);
+  }
+
+  &.active {
+    background: var(--primary);
+    width: 18px;
+    border-radius: 4px;
+  }
+
+  // Month exists in navigator but has no transactions
+  &.empty {
+    background: var(--surface-container);
+    border: 1.5px solid var(--outline-variant);
+    opacity: 0.6;
+  }
+}
+
 // ── Stats grid ────────────────────────────────────────────────────────────────
 .statsGrid {
   display: grid;
