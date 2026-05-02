@@ -40,9 +40,9 @@ export default defineConfig({
       workbox: {
         // Cache app shell and static assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Don't cache Firebase or external API calls
-        navigateFallback: '/',
-        navigateFallbackDenylist: [/^\/api/],
+        // navigateFallback must point to the precached index.html
+        // Use null to disable SPA fallback in SW (Vercel handles routing)
+        navigateFallback: null,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

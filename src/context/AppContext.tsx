@@ -101,8 +101,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [catCollectionPath]);
 
   // Fetch live EUR/RON rate once on mount
+  // Uses open.er-api.com which supports CORS from any origin
   useEffect(() => {
-    fetch('https://api.frankfurter.app/latest?from=RON&to=EUR')
+    fetch('https://open.er-api.com/v6/latest/RON')
       .then((r) => r.json())
       .then((data: { rates?: { EUR?: number } }) => {
         if (data?.rates?.EUR) setExchangeRate(data.rates.EUR);
