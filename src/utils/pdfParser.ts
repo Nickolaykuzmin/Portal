@@ -518,6 +518,7 @@ function buildSrlDescription(raw: string, type: string): string {
       const to = raw.match(/;\s*([^;]+?)\s*;RO\d{2}BTR/i);
       return to ? `Salariu → ${(to[1] ?? '').trim()}` : 'Plata salariu';
     }
+    
     // Loan repayment
     if (/imprumut|restituire/i.test(raw)) {
       const to = raw.match(/;\s*([^;]+?)\s*;RO\d{2}BTR/i);
