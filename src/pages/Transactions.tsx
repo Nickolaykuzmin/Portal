@@ -100,6 +100,19 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
     if (window.confirm(`Видалити "${tx.description}"?`)) await deleteTransaction(tx.id);
   };
 
+  const [deletingMonth, setDeletingMonth] = useState<string | null>(null);
+
+  const handleDeleteMonth = async (monthKey: string, txs: Transaction[]) => {
+    const label = getMonthLabel(monthKey);
+    if (!window.confirm(`Видалити всі ${txs.length} транзакцій за ${label}?\n\nЦю дію неможливо скасувати.`)) return;
+    setDeletingMonth(monthKey);
+    try {
+      await Promise.all(txs.map((tx) => deleteTransaction(tx.id)));
+    } finally {
+      setDeletingMonth(null);
+    }
+  };
+
   return (
     <>
       <TopBar title="Транзакції" onSearch={setSearch} onMenuClick={onMenuClick} />
@@ -187,6 +200,17 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
                       <span className={`${s.monthNet} ${net >= 0 ? s.positive : s.negative}`}>
                         {net >= 0 ? '+' : ''}{fmt(net)}
                       </span>
+                      <button
+                        className={s.deleteMonthBtn}
+                        disabled={deletingMonth === monthKey}
+                        title={`Видалити всі транзакції за ${getMonthLabel(monthKey)}`}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteMonth(monthKey, txs); }}
+                      >
+                        {deletingMonth === monthKey
+                          ? <span className={`material-symbols-outlined ${s.icon}`}>hourglass_top</span>
+                          : <span className={`material-symbols-outlined ${s.icon}`}>delete_sweep</span>
+                        }
+                      </button>
                     </div>
                   </div>
 
