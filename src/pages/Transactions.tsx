@@ -6,7 +6,7 @@ import TransactionRow from '../components/TransactionRow';
 import EditTransactionModal from '../components/EditTransactionModal';
 import TopBar from '../components/TopBar';
 import { formatCurrency } from '../utils/formatters';
-import type { Transaction } from '../types';
+import type { Transaction, CashSplitItem } from '../types';
 import s from './Transactions.module.scss';
 
 function getMonthLabel(key: string): string {
@@ -55,7 +55,9 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
   }, [filtered]);
 
   const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((sum, t) => sum + conv(t), 0);
-  const totalExpense = filtered.filter((t) => t.type === 'expense').reduce((sum, t) => sum + conv(t), 0);
+  const totalExpense = filtered
+    .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+    .reduce((sum, t) => sum + conv(t), 0);
 
   const toggleMonth = (key: string) =>
     setCollapsedMonths((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -66,6 +68,30 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
   const handleSave = async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
     if (editTx?.id) await updateTransaction(editTx.id, data);
     else await addTransaction(data);
+    setShowModal(false);
+    setEditTx(null);
+  };
+
+  const handleSplit = async (items: CashSplitItem[]) => {
+    if (!editTx?.id) return;
+    const original = transactions.find((t) => t.id === editTx.id);
+    if (!original) return;
+    // Delete original and add split items
+    await deleteTransaction(editTx.id);
+    await Promise.all(
+      items.map((item) =>
+        addTransaction({
+          date: original.date,
+          description: item.description,
+          amount: item.amount,
+          type: item.type,
+          category: item.category,
+          currency: original.currency,
+          bank: original.bank,
+          source: 'cash_split',
+        }),
+      ),
+    );
     setShowModal(false);
     setEditTx(null);
   };
@@ -133,7 +159,9 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
             {grouped.map(([monthKey, txs]) => {
               const isCollapsed = collapsedMonths[monthKey];
               const monthIncome  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + conv(t), 0);
-              const monthExpense = txs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + conv(t), 0);
+              const monthExpense = txs
+                .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+                .reduce((sum, t) => sum + conv(t), 0);
               const net = monthIncome - monthExpense;
 
               return (
@@ -201,6 +229,7 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
         <EditTransactionModal
           transaction={editTx}
           onSave={handleSave}
+          onSplit={handleSplit}
           onClose={() => { setShowModal(false); setEditTx(null); }}
         />
       )}

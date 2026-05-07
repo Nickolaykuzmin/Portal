@@ -93,16 +93,20 @@ export default function Overview({ onMenuClick }: OverviewProps) {
   );
 
   const monthExpenses = useMemo(
-    () => monthTxs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0),
+    () => monthTxs
+      .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+      .reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0),
     [monthTxs, convertAmount],
   );
 
   const categorySpend = useMemo(() => {
     const map: Record<string, number> = {};
-    monthTxs.filter((t) => t.type === 'expense').forEach((tx) => {
-      const cat = tx.category || 'other';
-      map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
-    });
+    monthTxs
+      .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+      .forEach((tx) => {
+        const cat = tx.category || 'other';
+        map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
+      });
     return map;
   }, [monthTxs, convertAmount]);
 
@@ -113,7 +117,9 @@ export default function Overview({ onMenuClick }: OverviewProps) {
       .slice(-6)
       .map(([month, txs]) => {
         const income  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
-        const expense = txs.filter((t) => t.type === 'expense').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
+        const expense = txs
+          .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+          .reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
         return {
           month: new Date(month + '-01').toLocaleDateString('uk-UA', { month: 'short' }),
           Дохід: Math.round(income),

@@ -159,3 +159,50 @@
     color: var(--error);
   }
 }
+
+// ── Cash withdrawal badges ────────────────────────────────────────────────────
+.neutralBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--surface-container);
+  color: var(--on-surface-variant);
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.processBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #fff3cd;
+  color: #92600a;
+  border: 1px solid #f0c040;
+  cursor: pointer;
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+  transition: background 0.12s;
+
+  &:hover {
+    background: #ffe69c;
+  }
+
+  .icon {
+    font-size: 12px;
+  }
+}
+
+// Neutral amount — muted color instead of expense color
+.amountCell.neutral {
+  color: var(--on-surface-variant);
+}

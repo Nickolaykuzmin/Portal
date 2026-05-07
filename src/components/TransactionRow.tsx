@@ -43,6 +43,9 @@ export default function TransactionRow({ transaction, onEdit, onDelete }: Transa
 
   const catBg = (category.color || '#737686') + '15';
 
+  const isNeutral = transaction.isCashWithdrawal && transaction.cashMode === 'neutral';
+  const isUnprocessed = transaction.isCashWithdrawal && !transaction.cashMode;
+
   return (
     <tr className={s.row}>
       {/* Description */}
@@ -57,7 +60,22 @@ export default function TransactionRow({ transaction, onEdit, onDelete }: Transa
             </span>
           </div>
           <div className={s.descText}>
-            <div className={s.name}>{displayDesc}</div>
+            <div className={s.name}>
+              {displayDesc}
+              {isNeutral && (
+                <span className={s.neutralBadge}>Нейтрально</span>
+              )}
+              {isUnprocessed && (
+                <button
+                  className={s.processBtn}
+                  onClick={(e) => { e.stopPropagation(); onEdit?.(transaction); }}
+                  title="Обробити зняття готівки"
+                >
+                  <span className={`material-symbols-outlined ${s.icon}`}>warning</span>
+                  Обробити
+                </button>
+              )}
+            </div>
             <div className={s.bank}>{transaction.bank || 'BT'}</div>
           </div>
         </div>
@@ -85,7 +103,7 @@ export default function TransactionRow({ transaction, onEdit, onDelete }: Transa
       </td>
 
       {/* Amount */}
-      <td className={`${s.amountCell} ${transaction.type === 'income' ? s.income : s.expense}`}>
+      <td className={`${s.amountCell} ${isNeutral ? s.neutral : transaction.type === 'income' ? s.income : s.expense}`}>
         <span className={`${s.amountPill} ${transaction.type === 'income' ? s.income : ''}`}>
           {transaction.type === 'income' ? '+' : '−'}{formatCurrency(displayAmount, displayCurrency)}
         </span>

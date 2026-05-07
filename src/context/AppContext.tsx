@@ -197,8 +197,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { added: newOnly.length, skipped: list.length - newOnly.length };
   };
 
-  const updateTransaction = (id: string, data: Partial<Transaction>) =>
-    updateDoc(doc(db, txCollectionPath(), id), data as Record<string, unknown>);
+  const updateTransaction = (id: string, data: Partial<Transaction>) => {
+    // Firestore rejects undefined values — strip them before sending
+    const clean = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined),
+    );
+    return updateDoc(doc(db, txCollectionPath(), id), clean);
+  };
 
   const deleteTransaction = (id: string) =>
     deleteDoc(doc(db, txCollectionPath(), id));

@@ -73,14 +73,23 @@ export function groupByMonth(transactions: Transaction[]): Record<string, Transa
 }
 
 /**
- * Calculate totals from transactions
+ * Returns true if a transaction should be excluded from expense totals.
+ * Neutral cash withdrawals are transfers, not real expenses.
+ */
+export function isNeutralCash(tx: Transaction): boolean {
+  return tx.isCashWithdrawal === true && tx.cashMode === 'neutral';
+}
+
+/**
+ * Calculate totals from transactions.
+ * Neutral cash withdrawals (cashMode: 'neutral') are excluded from expenses.
  */
 export function calcTotals(transactions: Transaction[]): Totals {
   return transactions.reduce<Totals>(
     (acc, tx) => {
       if (tx.type === 'income') {
         acc.income += tx.amount || 0;
-      } else {
+      } else if (!isNeutralCash(tx)) {
         acc.expenses += tx.amount || 0;
       }
       return acc;

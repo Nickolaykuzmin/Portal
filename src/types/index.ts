@@ -3,6 +3,8 @@
 export type TransactionType = 'income' | 'expense';
 export type Currency = 'RON' | 'EUR' | 'USD';
 
+export type CashMode = 'expense' | 'neutral' | 'split';
+
 export interface Transaction {
   id: string;
   date: string;           // ISO date string YYYY-MM-DD
@@ -14,7 +16,8 @@ export interface Transaction {
   bank?: string;
   source?: string;
   bankBalance?: number;
-  isCashWithdrawal?: boolean;   // true = ATM withdrawal, needs split
+  isCashWithdrawal?: boolean;   // true = ATM withdrawal
+  cashMode?: CashMode;          // how the withdrawal is handled
   createdAt?: unknown;    // Firestore ServerTimestamp
 }
 

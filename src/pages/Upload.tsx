@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import type React from 'react';
 import { parseStatement, autoCategory } from '../utils/pdfParser';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
@@ -6,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import TopBar from '../components/TopBar';
 import CashSplitModal from '../components/CashSplitModal';
-import type { NewTransaction, MergeResult, ParseResult, CashSplitItem } from '../types';
+import type { NewTransaction, MergeResult, ParseResult, CashSplitItem, CashMode } from '../types';
 import s from './Upload.module.scss';
 
 const STEPS = ['upload', 'preview', 'done'] as const;
@@ -30,6 +31,8 @@ export default function Upload({ onMenuClick }: UploadProps) {
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   const [saveMode, setSaveMode] = useState<'merge' | 'all'>('merge');
   const [cashSplitIdx, setCashSplitIdx] = useState<number | null>(null);
+  // Per-row cash mode for ATM transactions (before save)
+  const [cashModes, setCashModes] = useState<Record<number, CashMode>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File | null | undefined) => {
@@ -62,7 +65,22 @@ export default function Upload({ onMenuClick }: UploadProps) {
     if (!parseResult) return;
     setSaving(true);
     try {
-      const toSave = parseResult.transactions.filter((_, i) => selected.includes(i));
+      const toSave = parseResult.transactions
+        .filter((_, i) => selected.includes(i))
+        .map((tx, _i) => {
+          // Find original index in parseResult.transactions
+          const origIdx = parseResult.transactions.indexOf(tx);
+          if (tx.isCashWithdrawal) {
+            const mode = cashModes[origIdx] ?? 'expense';
+            return {
+              ...tx,
+              cashMode: mode,
+              // neutral: clear category; expense: keep category
+              category: mode === 'neutral' ? '' : tx.category,
+            };
+          }
+          return tx;
+        });
       if (saveMode === 'merge') {
         const result = await mergeTransactions(toSave);
         setMergeResult(result);
@@ -140,8 +158,23 @@ export default function Upload({ onMenuClick }: UploadProps) {
       return [...before, ...newIdxs, ...after];
     });
 
+    // Remove cashMode entry for this index (it's now split)
+    setCashModes((prev) => {
+      const next = { ...prev };
+      delete next[idx];
+      return next;
+    });
+
     setParseResult({ ...parseResult, transactions: newTransactions });
     setCashSplitIdx(null);
+  };
+
+  const setCashMode = (idx: number, mode: CashMode) => {
+    if (mode === 'split') {
+      setCashSplitIdx(idx);
+    } else {
+      setCashModes((prev) => ({ ...prev, [idx]: mode }));
+    }
   };
 
   return (
@@ -363,13 +396,39 @@ export default function Upload({ onMenuClick }: UploadProps) {
                             </td>
                             <td className={s.td}>
                               {isAtm ? (
-                                <button
-                                  onClick={() => setCashSplitIdx(i)}
-                                  className={s.splitBtn}
-                                >
-                                  <span className={`material-symbols-outlined ${s.icon}`}>call_split</span>
-                                  Розбити
-                                </button>
+                                <div className={s.cashModeCell}>
+                                  {([
+                                    { key: 'expense' as CashMode, label: 'Витрата' },
+                                    { key: 'neutral' as CashMode, label: 'Нейтрально' },
+                                    { key: 'split'   as CashMode, label: 'Розбити' },
+                                  ]).map((m) => {
+                                    const current = cashModes[i] ?? 'expense';
+                                    return (
+                                      <button
+                                        key={m.key}
+                                        onClick={() => setCashMode(i, m.key)}
+                                        className={`${s.cashModeBtn} ${current === m.key ? s[`cashMode_${m.key}`] : ''}`}
+                                      >
+                                        {m.label}
+                                      </button>
+                                    );
+                                  })}
+                                  {/* Category selector for expense mode */}
+                                  {(cashModes[i] ?? 'expense') === 'expense' && (
+                                    <select
+                                      value={tx.category}
+                                      onChange={(e) => updateCategory(i, e.target.value)}
+                                      className={s.categorySelect}
+                                      style={{ marginTop: 4 }}
+                                    >
+                                      {categories
+                                        .filter((c) => c.type === 'expense')
+                                        .map((c) => (
+                                          <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                  )}
+                                </div>
                               ) : (
                                 <select
                                   value={tx.category}

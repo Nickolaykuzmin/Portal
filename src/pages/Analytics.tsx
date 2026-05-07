@@ -64,7 +64,9 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
   }, [filtered]);
 
   const expensePie = useMemo((): PieEntry[] => {
-    const groups = groupByCategory(filtered.filter((t) => t.type === 'expense'));
+    const groups = groupByCategory(
+      filtered.filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral')),
+    );
     return Object.entries(groups)
       .map(([id, data]) => {
         const cat = resolveCategory(id, categories);
