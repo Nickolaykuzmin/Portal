@@ -13,5 +13,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'education',     name: 'Освіта',              icon: 'school',          color: '#059669', type: 'expense', isDefault: true },
   { id: 'cash',          name: 'Готівка',             icon: 'payments',        color: '#64748b', type: 'expense', isDefault: true },
   { id: 'taxes',         name: 'Податки',             icon: 'account_balance', color: '#b45309', type: 'expense', isDefault: true },
+  { id: 'dividends',     name: 'Дивіденди',           icon: 'savings',         color: '#7c3aed', type: 'expense', isDefault: true },
+  { id: 'bookkeeping',   name: 'Бухгалтерія',         icon: 'calculate',       color: '#6d28d9', type: 'expense', isDefault: true },
   { id: 'other',         name: 'Інше',                icon: 'category',        color: '#737686', type: 'expense', isDefault: true },
 ];

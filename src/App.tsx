@@ -6,6 +6,7 @@ import Transactions from './pages/Transactions';
 import Upload from './pages/Upload';
 import Categories from './pages/Categories';
 import Analytics from './pages/Analytics';
+import Taxes from './pages/Taxes';
 import Debug from './pages/Debug';
 import Login from './pages/Login';
 import { useAuth } from './hooks/useAuth';
@@ -28,6 +29,7 @@ function AuthenticatedApp() {
           <Route path="/upload"       element={<Upload       onMenuClick={() => setSidebarOpen(true)} />} />
           <Route path="/categories"   element={<Categories   onMenuClick={() => setSidebarOpen(true)} />} />
           <Route path="/analytics"    element={<Analytics    onMenuClick={() => setSidebarOpen(true)} />} />
+          <Route path="/taxes"        element={<Taxes        onMenuClick={() => setSidebarOpen(true)} />} />
           <Route path="/debug"        element={<Debug />} />
           <Route path="*"             element={<Navigate to="/" replace />} />
         </Routes>

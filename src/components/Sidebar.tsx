@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { to: '/upload',       icon: 'upload_file',  label: 'Завантажити' },
   { to: '/categories',   icon: 'sell',         label: 'Категорії' },
   { to: '/analytics',    icon: 'insights',     label: 'Аналітика' },
+  { to: '/taxes',        icon: 'account_balance', label: 'Податки' },
 ];
 
 interface SidebarProps {

@@ -14,6 +14,9 @@ const ICON_MAP: Record<string, { icon: string; color: string }> = {
   travel:        { icon: 'flight',         color: '#0891b2' },
   education:     { icon: 'school',         color: '#059669' },
   cash:          { icon: 'payments',       color: '#64748b' },
+  taxes:         { icon: 'account_balance', color: '#b45309' },
+  dividends:     { icon: 'savings',         color: '#7c3aed' },
+  bookkeeping:   { icon: 'calculate',       color: '#6d28d9' },
   other:         { icon: 'category',       color: '#737686' },
 };
 

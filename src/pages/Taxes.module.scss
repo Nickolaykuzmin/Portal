@@ -1,0 +1,429 @@
+@use '../styles/variables' as v;
+@use '../styles/mixins' as m;
+
+.page {
+  padding: v.$page-padding-top v.$page-padding-h v.$page-padding-h;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @include m.md {
+    padding: 72px v.$page-padding-h-sm 24px;
+  }
+
+  @include m.sm {
+    padding: 68px v.$page-padding-h-xs 20px;
+  }
+}
+
+// ── Not SRL state ─────────────────────────────────────────────────────────────
+.notSrl {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--on-surface-variant);
+}
+
+.notSrlIcon {
+  font-size: 56px;
+  color: var(--outline-variant);
+  display: block;
+  margin-bottom: 16px;
+}
+
+.notSrl h2 {
+  font-family: v.$font-display;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0 0 8px;
+}
+
+.notSrl p {
+  font-size: 14px;
+  margin: 0;
+  max-width: 360px;
+  margin-inline: auto;
+}
+
+// ── Info bar ──────────────────────────────────────────────────────────────────
+.infoBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.infoIcon {
+  font-size: 18px;
+  color: #b45309;
+  flex-shrink: 0;
+}
+
+// ── KPI grid ──────────────────────────────────────────────────────────────────
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @include m.md {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include m.sm {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.kpiCard {
+  background: white;
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpiAccent {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60px;
+  height: 60px;
+  opacity: 0.06;
+  border-radius: 0 16px 0 60px;
+}
+
+.kpiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--on-surface-variant);
+}
+
+.kpiIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .icon {
+    font-size: 16px;
+    color: white;
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.kpiValue {
+  font-family: v.$font-display;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--on-surface);
+  letter-spacing: -0.3px;
+}
+
+.kpiSub {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+// ── Compound interest card ────────────────────────────────────────────────────
+.compoundCard {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+}
+
+.compoundHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.compoundDesc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+.compoundControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.controlLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.controlInput {
+  width: 64px;
+  padding: 5px 8px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    border-color: var(--primary);
+  }
+}
+
+.compoundSummary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+
+  @include m.sm {
+    gap: 12px;
+  }
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summaryLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+.summaryValue {
+  font-family: v.$font-display;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--on-surface);
+
+  &.accentColor {
+    color: #b45309;
+  }
+
+  &.danger {
+    color: #dc2626;
+  }
+}
+
+// ── Monthly chart card ────────────────────────────────────────────────────────
+.monthlyCard {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+
+  h2 {
+    margin: 0 0 20px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+// ── Summary / tax table card ──────────────────────────────────────────────────
+.summaryCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+
+  h2 {
+    margin: 0 0 16px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.taxTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--on-surface-variant);
+    border-bottom: 2px solid var(--outline-variant);
+  }
+
+  td {
+    padding: 10px 12px;
+    color: var(--on-surface);
+    border-bottom: 1px solid var(--outline-variant);
+  }
+}
+
+.amountCell {
+  font-weight: 700;
+  text-align: right;
+  font-family: v.$font-display;
+}
+
+.totalRow {
+  td {
+    font-weight: 800;
+    border-bottom: 2px solid var(--outline-variant);
+    padding-top: 12px;
+  }
+}
+
+.separatorRow {
+  td {
+    padding: 4px;
+    border-bottom: none;
+  }
+}
+
+// ── Recent transactions card ──────────────────────────────────────────────────
+.recentCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+
+  h2 {
+    margin: 0 0 16px;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.txList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--outline-variant);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.txIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .icon {
+    font-size: 16px;
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.txInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.txDesc {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.txDate {
+  font-size: 11px;
+  color: var(--outline);
+  margin-top: 1px;
+}
+
+.txAmount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-surface);
+  flex-shrink: 0;
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.emptyChart {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--on-surface-variant);
+
+  .icon {
+    font-size: 40px;
+    color: var(--outline-variant);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
