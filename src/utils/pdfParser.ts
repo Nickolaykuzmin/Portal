@@ -98,7 +98,7 @@ export function autoCategory(description: string, type: string): string {
   if (/servicii —/.test(d)) return 'other';
 
   if (/lidl|kaufland|carrefour|mega.?image|auchan|penny|profi|aliment|food|cicken|restaurant|cafe|coffee|mcdonald|kfc|pizza|burger|sushi|ko.asia|berezka|stefysia|nicoland|ice srl/.test(d)) return 'food';
-  if (/uber|bolt|taxi|metro|tram|bus|cfr|tarom|wizz|ryanair|mol |rompetrol|omv|petrol|benzin|rovinieta|parking|parcare|auto.clean|metropolitan.self/.test(d)) return 'transport';
+  if (/uber|bolt|taxi|metro|tram|bus|cfr|tarom|wizz|ryanair|mol |moll|rompetrol|omv|petrol|benzin|rovinieta|parking|parcare|auto.clean|metropolitan.self/.test(d)) return 'transport';
   if (/amazon|emag|altex|flanco|zara|h&m|sinsay|lc.waikiki|set.colosseum|fashion|shop|mall|ikea|rituals|premium.vaping|vaping|mihaela.flowers|flowers/.test(d)) return 'shopping';
   if (/enel|electrica|gaz|apa|canal|internet|telekom|orange|vodafone|digi|utilit|365|abonament/.test(d)) return 'utilities';
   if (/farmacie|pharmacy|doctor|spital|hospital|medical|sanatate/.test(d)) return 'health';
