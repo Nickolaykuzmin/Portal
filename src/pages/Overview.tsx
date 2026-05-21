@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { useAppContext } from '../hooks/useAppContext';
-import { formatCurrency, formatDate, calcTotals, groupByMonth, groupByCategory, isNeutralCash } from '../utils/formatters';
+import { formatCurrency, formatDate, calcTotals, groupByMonth, isNeutralCash } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';
 import TopBar from '../components/TopBar';
@@ -120,8 +120,15 @@ export default function Overview({ onMenuClick }: OverviewProps) {
 
   const topCategories = useMemo(() => {
     const expenseTxs = monthTxs.filter((t) => t.type === 'expense' && !isNeutralCash(t));
-    const groups = groupByCategory(expenseTxs);
-    return Object.entries(groups)
+    // Group manually with currency conversion
+    const map: Record<string, { total: number; count: number }> = {};
+    for (const tx of expenseTxs) {
+      const cat = tx.category || 'other';
+      if (!map[cat]) map[cat] = { total: 0, count: 0 };
+      map[cat].total += convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
+      map[cat].count += 1;
+    }
+    return Object.entries(map)
       .map(([id, data]) => {
         const cat = resolveCategory(id, categories);
         return {
@@ -135,7 +142,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
       })
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 7);
-  }, [monthTxs, categories]);
+  }, [monthTxs, categories, convertAmount]);
 
   const recentTxs = useMemo(() => transactions.slice(0, 5), [transactions]);
 
