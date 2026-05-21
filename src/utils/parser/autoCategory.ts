@@ -7,6 +7,7 @@ export function autoCategory(description: string, type: string): string {
   if (type === 'income') {
     const d = description.toLowerCase();
     if (/salar|salary|wage|plata salarii/.test(d)) return 'salary';
+    if (/dividend/.test(d)) return 'income';
     if (/incasare factura|incasare op/.test(d)) return 'income';
     return 'income';
   }

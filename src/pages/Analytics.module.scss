@@ -254,3 +254,247 @@
     font-size: 13px;
   }
 }
+
+
+// ── Savings / Budget widget ───────────────────────────────────────────────────
+.savingsCard {
+  background: white;
+  border-radius: 20px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  border: 1px solid var(--outline-variant);
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.05);
+}
+
+.savingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.savingsTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    font-family: v.$font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--on-surface);
+  }
+}
+
+.savingsSubtitle {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+.savingsIconWrap {
+  @include m.icon-chip(40px, 12px);
+  background: #e0f2fe;
+
+  .icon {
+    font-size: 20px;
+    color: #0284c7;
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+// Month progress
+.monthProgress {
+  margin-bottom: 20px;
+}
+
+.monthProgressBar {
+  height: 4px;
+  background: var(--surface-container);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.monthProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #06b6d4);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+// Stats grid
+.savingsStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @include m.md {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include m.sm {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.savingsStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface-container-low);
+  border-radius: 12px;
+}
+
+.savingsStatLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+.savingsStatValue {
+  font-family: v.$font-display;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--on-surface);
+
+  &.income { color: #006c49; }
+  &.expense { color: #ac0031; }
+}
+
+.savingsStatHint {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+// Expense vs average bar
+.expenseBar {
+  margin-bottom: 20px;
+}
+
+.expenseBarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.expenseBarLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.expenseBarPct {
+  font-size: 12px;
+  font-weight: 700;
+
+  &.good { color: #006c49; }
+  &.warning { color: #d97706; }
+  &.over { color: #ac0031; }
+}
+
+.expenseBarTrack {
+  height: 8px;
+  background: var(--surface-container);
+  border-radius: 4px;
+  overflow: visible;
+  position: relative;
+}
+
+.expenseBarFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+
+  &.good { background: linear-gradient(90deg, #22c55e, #16a34a); }
+  &.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
+  &.over { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  &.overExtra {
+    position: absolute;
+    top: 0;
+    background: #fca5a5;
+    border-radius: 0 4px 4px 0;
+  }
+}
+
+// Savings recommendation
+.savingsRecommendation {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.savingsRecommendIcon {
+  @include m.icon-chip(36px, 10px);
+  background: #dcfce7;
+  flex-shrink: 0;
+
+  .icon {
+    font-size: 18px;
+    color: #16a34a;
+    font-variation-settings: "'FILL' 1";
+  }
+}
+
+.savingsRecommendBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.savingsRecommendLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #166534;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.savingsRecommendValue {
+  font-family: v.$font-display;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+
+  &.positive { color: #15803d; }
+  &.zero { color: #92400e; font-size: 14px; font-weight: 600; }
+}
+
+.savingsRecommendHint {
+  font-size: 11px;
+  color: #4b5563;
+  margin-top: 2px;
+}
+
+// Projected row
+.projectedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef3c7;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+
+  .icon {
+    font-size: 16px;
+    color: #d97706;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}

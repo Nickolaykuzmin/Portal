@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { useAppContext } from '../hooks/useAppContext';
-import { formatCurrency, formatDate, calcTotals, groupByMonth } from '../utils/formatters';
+import { formatCurrency, formatDate, calcTotals, groupByMonth, isNeutralCash } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';
 import TopBar from '../components/TopBar';
@@ -94,7 +94,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
 
   const monthExpenses = useMemo(
     () => monthTxs
-      .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+      .filter((t) => t.type === 'expense' && !isNeutralCash(t))
       .reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0),
     [monthTxs, convertAmount],
   );
@@ -102,7 +102,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
   const categorySpend = useMemo(() => {
     const map: Record<string, number> = {};
     monthTxs
-      .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+      .filter((t) => t.type === 'expense' && !isNeutralCash(t))
       .forEach((tx) => {
         const cat = tx.category || 'other';
         map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
@@ -118,7 +118,7 @@ export default function Overview({ onMenuClick }: OverviewProps) {
       .map(([month, txs]) => {
         const income  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
         const expense = txs
-          .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+          .filter((t) => t.type === 'expense' && !isNeutralCash(t))
           .reduce((sum, t) => sum + convertAmount(t.amount || 0, (t.currency || 'RON') as Currency), 0);
         return {
           month: new Date(month + '-01').toLocaleDateString('uk-UA', { month: 'short' }),

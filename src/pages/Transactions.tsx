@@ -5,7 +5,7 @@ import { useAppContext } from '../hooks/useAppContext';
 import TransactionRow from '../components/TransactionRow';
 import EditTransactionModal from '../components/EditTransactionModal';
 import TopBar from '../components/TopBar';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, isNeutralCash } from '../utils/formatters';
 import type { Transaction, CashSplitItem } from '../types';
 import s from './Transactions.module.scss';
 
@@ -56,7 +56,7 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
 
   const totalIncome  = filtered.filter((t) => t.type === 'income').reduce((sum, t) => sum + conv(t), 0);
   const totalExpense = filtered
-    .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+    .filter((t) => t.type === 'expense' && !isNeutralCash(t))
     .reduce((sum, t) => sum + conv(t), 0);
 
   const toggleMonth = (key: string) =>
@@ -173,7 +173,7 @@ export default function Transactions({ onMenuClick }: TransactionsProps) {
               const isCollapsed = collapsedMonths[monthKey];
               const monthIncome  = txs.filter((t) => t.type === 'income').reduce((sum, t) => sum + conv(t), 0);
               const monthExpense = txs
-                .filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral'))
+                .filter((t) => t.type === 'expense' && !isNeutralCash(t))
                 .reduce((sum, t) => sum + conv(t), 0);
               const net = monthIncome - monthExpense;
 

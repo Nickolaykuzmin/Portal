@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
-import { formatCurrency, calcTotals, groupByMonth, groupByCategory } from '../utils/formatters';
+import { formatCurrency, calcTotals, groupByMonth, groupByCategory, isNeutralCash } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import TopBar from '../components/TopBar';
 import s from './Analytics.module.scss';
@@ -34,6 +34,140 @@ interface AnalyticsProps {
   onMenuClick?: () => void;
 }
 
+// ─── Monthly savings calculation helper ───────────────────────────────────────
+
+interface MonthlySavingsData {
+  currentMonthIncome: number;
+  currentMonthExpenses: number;
+  currentMonthBalance: number;
+  avgMonthlyExpenses: number;
+  avgMonthlyIncome: number;
+  regularIncome: number;        // salary / recurring income this month
+  dividendIncome: number;       // dividend income this month
+  avgQuarterlyDividends: number; // average quarterly dividend (amortized monthly)
+  recommendedSavings: number;
+  savingsPercent: number;
+  monthsAnalyzed: number;
+  currentMonthLabel: string;
+  daysElapsed: number;
+  daysInMonth: number;
+  projectedExpenses: number;
+}
+
+/** Check if a transaction looks like dividend income */
+function isDividendIncome(tx: { description: string; type: string; category?: string }): boolean {
+  if (tx.type !== 'income') return false;
+  const d = (tx.description || '').toLowerCase();
+  return /dividend/.test(d);
+}
+
+function useMonthlySavings(transactions: ReturnType<typeof useTransactions>['transactions']): MonthlySavingsData {
+  return useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const daysElapsed = now.getDate();
+
+    const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const currentMonthLabel = new Intl.DateTimeFormat('uk-UA', { month: 'long', year: 'numeric' }).format(now);
+
+    // Current month transactions
+    const currentMonthTxs = transactions.filter((tx) => (tx.date ?? '').startsWith(currentMonthKey));
+    const currentTotals = calcTotals(currentMonthTxs);
+
+    // Split current month income into regular vs dividends
+    const currentMonthIncomeTxs = currentMonthTxs.filter((tx) => tx.type === 'income');
+    const dividendIncome = currentMonthIncomeTxs
+      .filter(isDividendIncome)
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const regularIncome = currentTotals.income - dividendIncome;
+
+    // Historical months (exclude current month for averages)
+    const monthGroups = groupByMonth(transactions);
+    const historicalMonths = Object.entries(monthGroups)
+      .filter(([key]) => key < currentMonthKey && key !== 'unknown')
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 12); // last 12 complete months for better dividend detection
+
+    let avgMonthlyExpenses = 0;
+    let avgMonthlyRegularIncome = 0;
+    let totalDividends = 0;
+    let monthsWithData = 0;
+
+    if (historicalMonths.length > 0) {
+      // Use last 6 months for expense/income averages
+      const recentMonths = historicalMonths.slice(0, 6);
+      const totals = recentMonths.map(([, txs]) => calcTotals(txs));
+      avgMonthlyExpenses = totals.reduce((sum, t) => sum + t.expenses, 0) / totals.length;
+
+      // Calculate regular income (excluding dividends) average
+      for (const [, txs] of recentMonths) {
+        const monthIncome = txs.filter((tx) => tx.type === 'income');
+        const monthDividends = monthIncome.filter(isDividendIncome).reduce((s, tx) => s + (tx.amount || 0), 0);
+        const monthRegular = calcTotals(txs).income - monthDividends;
+        avgMonthlyRegularIncome += monthRegular;
+      }
+      avgMonthlyRegularIncome /= recentMonths.length;
+
+      // Calculate average quarterly dividends from all available history (up to 12 months)
+      monthsWithData = historicalMonths.length;
+      for (const [, txs] of historicalMonths) {
+        const monthDivs = txs.filter(isDividendIncome).reduce((s, tx) => s + (tx.amount || 0), 0);
+        totalDividends += monthDivs;
+      }
+    }
+
+    // Amortize dividends: total dividends over N months → monthly equivalent
+    // This gives a fair monthly "dividend contribution" to savings
+    const avgQuarterlyDividends = monthsWithData > 0 ? totalDividends / monthsWithData : 0;
+
+    // Total average monthly income = regular + amortized dividends
+    const avgMonthlyIncome = avgMonthlyRegularIncome + avgQuarterlyDividends;
+
+    // Project current month expenses based on daily rate
+    const dailyExpenseRate = daysElapsed > 0 ? currentTotals.expenses / daysElapsed : 0;
+    const projectedExpenses = dailyExpenseRate * daysInMonth;
+
+    // ── Recommended savings calculation ──────────────────────────────────────
+    // Use the higher of: projected expenses or average historical expenses
+    const expectedExpenses = Math.max(projectedExpenses, avgMonthlyExpenses);
+
+    // Income base: current month regular income + amortized dividend portion
+    // If current month has actual dividends, use them; otherwise use amortized average
+    const effectiveDividendContribution = dividendIncome > 0
+      ? dividendIncome / 3  // spread this quarter's dividends over 3 months
+      : avgQuarterlyDividends;
+
+    const incomeBase = (regularIncome > 0 ? regularIncome : avgMonthlyRegularIncome)
+      + effectiveDividendContribution;
+
+    const rawSavings = incomeBase - expectedExpenses;
+    // Apply 10% safety buffer (keep 10% extra for unexpected expenses)
+    const recommendedSavings = Math.max(0, rawSavings * 0.9);
+
+    const savingsPercent = incomeBase > 0 ? (recommendedSavings / incomeBase) * 100 : 0;
+
+    return {
+      currentMonthIncome: currentTotals.income,
+      currentMonthExpenses: currentTotals.expenses,
+      currentMonthBalance: currentTotals.income - currentTotals.expenses,
+      avgMonthlyExpenses,
+      avgMonthlyIncome,
+      regularIncome,
+      dividendIncome,
+      avgQuarterlyDividends,
+      recommendedSavings,
+      savingsPercent,
+      monthsAnalyzed: Math.min(historicalMonths.length, 6),
+      currentMonthLabel,
+      daysElapsed,
+      daysInMonth,
+      projectedExpenses,
+    };
+  }, [transactions]);
+}
+
 export default function Analytics({ onMenuClick }: AnalyticsProps) {
   const { transactions } = useTransactions();
   const { categories } = useCategories();
@@ -48,6 +182,8 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
   }, [transactions, period]);
 
   const totals = useMemo(() => calcTotals(filtered), [filtered]);
+
+  const savings = useMonthlySavings(transactions);
 
   const monthlyData = useMemo(() => {
     const groups = groupByMonth(filtered);
@@ -65,7 +201,7 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
 
   const expensePie = useMemo((): PieEntry[] => {
     const groups = groupByCategory(
-      filtered.filter((t) => t.type === 'expense' && !(t.isCashWithdrawal && t.cashMode === 'neutral')),
+      filtered.filter((t) => t.type === 'expense' && !isNeutralCash(t)),
     );
     return Object.entries(groups)
       .map(([id, data]) => {
@@ -133,6 +269,9 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
             </div>
           ))}
         </div>
+
+        {/* Monthly savings widget */}
+        <SavingsWidget data={savings} />
 
         {/* Area chart */}
         <div className={s.areaCard}>
@@ -257,6 +396,148 @@ function EmptyChart() {
     <div className={s.emptyChart}>
       <span className={`material-symbols-outlined ${s.icon}`}>bar_chart</span>
       <p>Немає даних</p>
+    </div>
+  );
+}
+
+// ─── Savings Widget ───────────────────────────────────────────────────────────
+
+interface SavingsWidgetProps {
+  data: MonthlySavingsData;
+}
+
+function SavingsWidget({ data }: SavingsWidgetProps) {
+  const progressPercent = data.daysInMonth > 0
+    ? Math.min(100, (data.daysElapsed / data.daysInMonth) * 100)
+    : 0;
+
+  const expenseProgress = data.avgMonthlyExpenses > 0
+    ? Math.min(100, (data.currentMonthExpenses / data.avgMonthlyExpenses) * 100)
+    : 0;
+
+  const expenseStatus: 'good' | 'warning' | 'over' =
+    expenseProgress <= 75 ? 'good' : expenseProgress <= 100 ? 'warning' : 'over';
+
+  return (
+    <div className={s.savingsCard}>
+      <div className={s.savingsHeader}>
+        <div className={s.savingsTitle}>
+          <div className={s.savingsIconWrap}>
+            <span className={`material-symbols-outlined ${s.icon}`}>savings</span>
+          </div>
+          <div>
+            <h2>Бюджет на місяць</h2>
+            <span className={s.savingsSubtitle}>{data.currentMonthLabel} · день {data.daysElapsed}/{data.daysInMonth}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Month progress bar */}
+      <div className={s.monthProgress}>
+        <div className={s.monthProgressBar}>
+          <div className={s.monthProgressFill} style={{ width: `${progressPercent}%` }} />
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className={s.savingsStats}>
+        <div className={s.savingsStat}>
+          <span className={s.savingsStatLabel}>Зарплата</span>
+          <span className={`${s.savingsStatValue} ${s.income}`}>
+            {formatCurrency(data.regularIncome)}
+          </span>
+        </div>
+        <div className={s.savingsStat}>
+          <span className={s.savingsStatLabel}>Дивіденди</span>
+          <span className={`${s.savingsStatValue} ${s.income}`}>
+            {data.dividendIncome > 0
+              ? formatCurrency(data.dividendIncome)
+              : data.avgQuarterlyDividends > 0
+                ? `~${formatCurrency(data.avgQuarterlyDividends)}/міс.`
+                : '—'}
+          </span>
+          {data.dividendIncome > 0 && (
+            <span className={s.savingsStatHint}>÷3 = {formatCurrency(data.dividendIncome / 3)}/міс.</span>
+          )}
+        </div>
+        <div className={s.savingsStat}>
+          <span className={s.savingsStatLabel}>Витрати цього місяця</span>
+          <span className={`${s.savingsStatValue} ${s.expense}`}>
+            {formatCurrency(data.currentMonthExpenses)}
+          </span>
+        </div>
+        <div className={s.savingsStat}>
+          <span className={s.savingsStatLabel}>Сер. витрати/міс.</span>
+          <span className={s.savingsStatValue}>
+            {data.monthsAnalyzed > 0 ? formatCurrency(data.avgMonthlyExpenses) : '—'}
+          </span>
+        </div>
+      </div>
+
+      {/* Expense vs average bar */}
+      {data.monthsAnalyzed > 0 && (
+        <div className={s.expenseBar}>
+          <div className={s.expenseBarHeader}>
+            <span className={s.expenseBarLabel}>Витрати vs середнє</span>
+            <span className={`${s.expenseBarPct} ${s[expenseStatus]}`}>
+              {Math.round(expenseProgress)}%
+            </span>
+          </div>
+          <div className={s.expenseBarTrack}>
+            <div
+              className={`${s.expenseBarFill} ${s[expenseStatus]}`}
+              style={{ width: `${Math.min(expenseProgress, 100)}%` }}
+            />
+            {expenseProgress > 100 && (
+              <div
+                className={`${s.expenseBarFill} ${s.overExtra}`}
+                style={{ width: `${Math.min(expenseProgress - 100, 30)}%`, left: '100%' }}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Savings recommendation */}
+      <div className={s.savingsRecommendation}>
+        <div className={s.savingsRecommendIcon}>
+          <span className={`material-symbols-outlined ${s.icon}`}>
+            {data.recommendedSavings > 0 ? 'trending_up' : 'warning'}
+          </span>
+        </div>
+        <div className={s.savingsRecommendBody}>
+          <span className={s.savingsRecommendLabel}>
+            Можна відкласти «на чорний день»
+          </span>
+          <span className={`${s.savingsRecommendValue} ${data.recommendedSavings > 0 ? s.positive : s.zero}`}>
+            {data.recommendedSavings > 0
+              ? `~${formatCurrency(data.recommendedSavings)}`
+              : 'Поки що 0 — витрати перевищують дохід'}
+          </span>
+          {data.recommendedSavings > 0 && data.savingsPercent > 0 && (
+            <span className={s.savingsRecommendHint}>
+              ≈ {data.savingsPercent.toFixed(0)}% від доходу · з урахуванням 10% буфера
+              {data.dividendIncome > 0 && ' · дивіденди розподілені на 3 міс.'}
+              {data.dividendIncome === 0 && data.avgQuarterlyDividends > 0 && ' · включає амортизовані дивіденди'}
+            </span>
+          )}
+          {data.monthsAnalyzed === 0 && (
+            <span className={s.savingsRecommendHint}>
+              Потрібна історія хоча б за 1 місяць для точного розрахунку
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Projected expenses */}
+      {data.daysElapsed > 0 && data.daysElapsed < data.daysInMonth && (
+        <div className={s.projectedRow}>
+          <span className={`material-symbols-outlined ${s.icon}`}>schedule</span>
+          <span>
+            Прогноз витрат до кінця місяця: <strong>{formatCurrency(data.projectedExpenses)}</strong>
+          </span>
+        </div>
+      )}
     </div>
   );
 }
