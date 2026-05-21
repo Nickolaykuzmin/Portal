@@ -16,6 +16,7 @@ interface PeriodOption {
 }
 
 const PERIOD_OPTIONS: PeriodOption[] = [
+  { key: 'month', label: 'Цей місяць' },
   { key: 'all', label: 'Весь час' },
   { key: '12m', label: '12 міс.' },
   { key: '6m',  label: '6 міс.' },
@@ -28,6 +29,7 @@ interface PieEntry {
   icon: string;
   value: number;
   color: string;
+  count: number;
 }
 
 interface AnalyticsProps {
@@ -171,10 +173,15 @@ function useMonthlySavings(transactions: ReturnType<typeof useTransactions>['tra
 export default function Analytics({ onMenuClick }: AnalyticsProps) {
   const { transactions } = useTransactions();
   const { categories } = useCategories();
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState('month');
 
   const filtered = useMemo(() => {
     if (period === 'all') return transactions;
+    if (period === 'month') {
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      return transactions.filter((t) => (t.date ?? '').startsWith(monthKey));
+    }
     const months = period === '3m' ? 3 : period === '6m' ? 6 : 12;
     const cutoff = new Date(new Date().getFullYear(), new Date().getMonth() - months, 1)
       .toISOString().split('T')[0];
@@ -206,7 +213,7 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
     return Object.entries(groups)
       .map(([id, data]) => {
         const cat = resolveCategory(id, categories);
-        return { id, name: cat.name, icon: cat.icon, value: Math.round(data.total), color: cat.color };
+        return { id, name: cat.name, icon: cat.icon, value: Math.round(data.total), color: cat.color, count: data.count };
       })
       .sort((a, b) => b.value - a.value)
       .slice(0, 7);
@@ -217,7 +224,7 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
     return Object.entries(groups)
       .map(([id, data]) => {
         const cat = resolveCategory(id, categories);
-        return { id, name: cat.name, icon: cat.icon, value: Math.round(data.total), color: cat.color };
+        return { id, name: cat.name, icon: cat.icon, value: Math.round(data.total), color: cat.color, count: data.count };
       })
       .sort((a, b) => b.value - a.value);
   }, [filtered, categories]);
@@ -331,18 +338,21 @@ function PieCard({ title, data, total }: PieCardProps) {
     <div className={s.pieCard}>
       <h2>{title}</h2>
       {data.length > 0 ? (
-        <div className={s.pieContent}>
-          <div className={s.pieChartWrap}>
-            <ResponsiveContainer width={160} height={160}>
+        <>
+          {/* Donut chart with total in center */}
+          <div className={s.donutWrap}>
+            <ResponsiveContainer width={220} height={220}>
               <PieChart>
                 <Pie
                   data={data}
                   cx="50%"
                   cy="50%"
-                  innerRadius={46}
-                  outerRadius={72}
+                  innerRadius={65}
+                  outerRadius={100}
                   dataKey="value"
-                  paddingAngle={3}
+                  paddingAngle={2}
+                  startAngle={90}
+                  endAngle={-270}
                 >
                   {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
@@ -352,16 +362,18 @@ function PieCard({ title, data, total }: PieCardProps) {
                 />
               </PieChart>
             </ResponsiveContainer>
+            <div className={s.donutCenter}>
+              <span className={s.donutTotal}>{formatCurrency(total)}</span>
+            </div>
           </div>
-          <div className={s.pieLegend}>
+
+          {/* Category list */}
+          <div className={s.catList}>
             {data.map((item) => {
               const pct = total > 0 ? ((item.value / total) * 100).toFixed(0) : '0';
               return (
-                <div key={item.id} className={s.pieLegendItem}>
-                  <div
-                    className={s.pieLegendIcon}
-                    style={{ background: item.color + '20' }}
-                  >
+                <div key={item.id} className={s.catListItem}>
+                  <div className={s.catListIcon} style={{ background: item.color + '18' }}>
                     <span
                       className={`material-symbols-outlined ${s.icon}`}
                       style={{ color: item.color }}
@@ -369,23 +381,19 @@ function PieCard({ title, data, total }: PieCardProps) {
                       {item.icon || 'category'}
                     </span>
                   </div>
-                  <div className={s.pieLegendInfo}>
-                    <div className={s.pieLegendRow}>
-                      <span className={s.name}>{item.name}</span>
-                      <span className={s.pct}>{pct}%</span>
-                    </div>
-                    <div className={s.pieLegendBar}>
-                      <div
-                        className={s.pieLegendFill}
-                        style={{ width: `${pct}%`, background: item.color }}
-                      />
-                    </div>
+                  <div className={s.catListInfo}>
+                    <span className={s.catListName}>{item.name}</span>
+                    <span className={s.catListCount}>{item.count} транзакцій</span>
+                  </div>
+                  <div className={s.catListRight}>
+                    <span className={s.catListAmount}>{formatCurrency(item.value)}</span>
+                    <span className={s.catListPct}>{pct}%</span>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </>
       ) : <EmptyChart />}
     </div>
   );

@@ -154,86 +154,103 @@
   }
 }
 
-.pieContent {
+// Donut chart with center label
+.donutWrap {
+  position: relative;
   display: flex;
-  gap: 20px;
+  justify-content: center;
   align-items: center;
+  margin-bottom: 24px;
 }
 
-.pieChartWrap {
-  flex-shrink: 0;
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
 }
 
-.pieLegend {
-  flex: 1;
+.donutTotal {
+  font-family: v.$font-display;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--on-surface);
+  letter-spacing: -0.3px;
+}
+
+// Category list (like the screenshot)
+.catList {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 0;
 }
 
-.pieLegendItem {
+.catListItem {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--surface-container);
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.pieLegendIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.catListIcon {
+  @include m.icon-chip(40px, 10px);
   // background set inline
 
   .icon {
-    font-size: 13px;
+    font-size: 18px;
     font-variation-settings: "'FILL' 1";
     // color set inline
   }
 }
 
-.pieLegendInfo {
+.catListInfo {
   flex: 1;
   min-width: 0;
-}
-
-.pieLegendRow {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3px;
-
-  .name {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--on-surface);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100px;
-  }
-
-  .pct {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--on-surface);
-    margin-left: 4px;
-  }
+  flex-direction: column;
+  gap: 2px;
 }
 
-.pieLegendBar {
-  height: 3px;
-  background: var(--surface-container);
-  border-radius: 2px;
+.catListName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.pieLegendFill {
-  height: 100%;
-  border-radius: 2px;
-  // width + background set inline
+.catListCount {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+.catListRight {
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catListAmount {
+  font-family: v.$font-display;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.catListPct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant);
 }
 
 // ── Empty chart ───────────────────────────────────────────────────────────────

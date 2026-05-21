@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  PieChart, Pie, Cell,
 } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
 import { useAppContext } from '../hooks/useAppContext';
-import { formatCurrency, formatDate, calcTotals, groupByMonth, isNeutralCash } from '../utils/formatters';
+import { formatCurrency, formatDate, calcTotals, groupByMonth, groupByCategory, isNeutralCash } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import StatCard from '../components/StatCard';
 import TopBar from '../components/TopBar';
@@ -99,17 +100,6 @@ export default function Overview({ onMenuClick }: OverviewProps) {
     [monthTxs, convertAmount],
   );
 
-  const categorySpend = useMemo(() => {
-    const map: Record<string, number> = {};
-    monthTxs
-      .filter((t) => t.type === 'expense' && !isNeutralCash(t))
-      .forEach((tx) => {
-        const cat = tx.category || 'other';
-        map[cat] = (map[cat] || 0) + convertAmount(tx.amount || 0, (tx.currency || 'RON') as Currency);
-      });
-    return map;
-  }, [monthTxs, convertAmount]);
-
   const monthlyChartData = useMemo(() => {
     const groups = groupByMonth(transactions);
     return Object.entries(groups)
@@ -129,11 +119,23 @@ export default function Overview({ onMenuClick }: OverviewProps) {
   }, [transactions, convertAmount]);
 
   const topCategories = useMemo(() => {
-    return Object.entries(categorySpend)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([id, amount]) => ({ ...resolveCategory(id, categories), amount }));
-  }, [categorySpend, categories]);
+    const expenseTxs = monthTxs.filter((t) => t.type === 'expense' && !isNeutralCash(t));
+    const groups = groupByCategory(expenseTxs);
+    return Object.entries(groups)
+      .map(([id, data]) => {
+        const cat = resolveCategory(id, categories);
+        return {
+          id,
+          name: cat.name,
+          icon: cat.icon,
+          color: cat.color,
+          amount: data.total,
+          count: data.count,
+        };
+      })
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 7);
+  }, [monthTxs, categories]);
 
   const recentTxs = useMemo(() => transactions.slice(0, 5), [transactions]);
 
@@ -245,35 +247,73 @@ export default function Overview({ onMenuClick }: OverviewProps) {
             )}
           </div>
 
-          {/* Top categories */}
+          {/* Expenses by category — donut + list */}
           <div className={`whisper-shadow ${s.topCatCard}`}>
-            <h2>Топ витрат</h2>
+            <h2>Витрати за категоріями</h2>
             {topCategories.length === 0 ? (
               <p className={s.topCatEmpty}>Немає витрат за {activeMonthLabel}</p>
             ) : (
-              <div className={s.topCatList}>
-                {topCategories.map((cat) => (
-                  <div key={cat.id} className={s.topCatItem}>
-                    <div
-                      className={s.catIcon}
-                      style={{ background: (cat.color || '#737686') + '20' }}
-                    >
-                      <span
-                        className={`material-symbols-outlined ${s.icon}`}
-                        style={{ color: cat.color || '#737686' }}
+              <>
+                {/* Donut chart */}
+                <div className={s.donutWrap}>
+                  <ResponsiveContainer width={200} height={200}>
+                    <PieChart>
+                      <Pie
+                        data={topCategories}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={58}
+                        outerRadius={90}
+                        dataKey="amount"
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={-270}
                       >
-                        {cat.icon || 'category'}
-                      </span>
-                    </div>
-                    <div className={s.catInfo}>
-                      <div className={s.catRow}>
-                        <span className={s.name}>{cat.name}</span>
-                        <span className={s.value}>{fmt(cat.amount)}</span>
-                      </div>
-                    </div>
+                        {topCategories.map((entry, i) => (
+                          <Cell key={i} fill={entry.color || '#737686'} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(v) => fmt(v as number)}
+                        contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid var(--outline-variant)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className={s.donutCenter}>
+                    <span className={s.donutTotal}>{fmt(monthExpenses)}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+
+                {/* Category list */}
+                <div className={s.topCatList}>
+                  {topCategories.map((cat) => {
+                    const pct = monthExpenses > 0 ? ((cat.amount / monthExpenses) * 100).toFixed(0) : '0';
+                    return (
+                      <div key={cat.id} className={s.topCatItem}>
+                        <div
+                          className={s.catIcon}
+                          style={{ background: (cat.color || '#737686') + '18' }}
+                        >
+                          <span
+                            className={`material-symbols-outlined ${s.icon}`}
+                            style={{ color: cat.color || '#737686' }}
+                          >
+                            {cat.icon || 'category'}
+                          </span>
+                        </div>
+                        <div className={s.catInfo}>
+                          <span className={s.name}>{cat.name}</span>
+                          <span className={s.catCount}>{cat.count} транзакцій</span>
+                        </div>
+                        <div className={s.catRight}>
+                          <span className={s.value}>{fmt(cat.amount)}</span>
+                          <span className={s.catPct}>{pct}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </div>
