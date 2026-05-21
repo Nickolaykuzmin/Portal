@@ -18,6 +18,8 @@ export interface Transaction {
   bankBalance?: number;
   isCashWithdrawal?: boolean;   // true = ATM withdrawal
   cashMode?: CashMode;          // how the withdrawal is handled
+  /** Original parser-generated description, preserved for dedup even after user edits */
+  originalDescription?: string;
   createdAt?: unknown;    // Firestore ServerTimestamp
 }
 

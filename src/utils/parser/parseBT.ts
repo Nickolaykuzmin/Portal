@@ -121,7 +121,7 @@ export function parseBT(pages: PdfPage[]): NewTransaction[] {
   // Deduplicate
   const seen = new Set<string>();
   return transactions.filter((tx) => {
-    const key = `${tx.date}|${tx.amount}|${tx.description.slice(0, 20)}`;
+    const key = `${tx.date}|${tx.amount}|${tx.type}|${tx.description.slice(0, 30)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

@@ -174,24 +174,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Transaction actions ────────────────────────────────────────────────────
   const addTransaction = (tx: NewTransaction) =>
-    addDoc(collection(db, txCollectionPath()), { ...tx, createdAt: serverTimestamp() });
+    addDoc(collection(db, txCollectionPath()), {
+      ...tx,
+      originalDescription: tx.description,
+      createdAt: serverTimestamp(),
+    });
 
   const addTransactions = (list: NewTransaction[]) =>
     Promise.all(list.map((tx) =>
-      addDoc(collection(db, txCollectionPath()), { ...tx, createdAt: serverTimestamp() }),
+      addDoc(collection(db, txCollectionPath()), {
+        ...tx,
+        originalDescription: tx.description,
+        createdAt: serverTimestamp(),
+      }),
     ));
 
   const mergeTransactions = async (list: NewTransaction[]): Promise<MergeResult> => {
-    const existingKeys = new Set(
-      transactions.map((tx) => `${tx.date}|${tx.amount}|${(tx.description || '').slice(0, 20)}`),
-    );
+    // Build a multiset of existing dedup keys (supports multiple identical transactions)
+    const existingKeyCounts = new Map<string, number>();
+    for (const tx of transactions) {
+      // Use originalDescription if available (survives user edits), fall back to description
+      const desc = (tx.originalDescription || tx.description || '').slice(0, 30);
+      const key = `${tx.date}|${tx.amount}|${tx.type}|${desc}`;
+      existingKeyCounts.set(key, (existingKeyCounts.get(key) ?? 0) + 1);
+    }
+
+    // Track how many times each key from the incoming list has been "consumed"
+    const incomingUsed = new Map<string, number>();
+
     const newOnly = list.filter((tx) => {
-      const key = `${tx.date}|${tx.amount}|${(tx.description || '').slice(0, 20)}`;
-      return !existingKeys.has(key);
+      const desc = (tx.description || '').slice(0, 30);
+      const key = `${tx.date}|${tx.amount}|${tx.type}|${desc}`;
+
+      const existingCount = existingKeyCounts.get(key) ?? 0;
+      const usedCount = incomingUsed.get(key) ?? 0;
+
+      if (usedCount < existingCount) {
+        // This incoming tx matches an existing one — skip it
+        incomingUsed.set(key, usedCount + 1);
+        return false;
+      }
+      // No more existing matches — this is genuinely new
+      incomingUsed.set(key, usedCount + 1);
+      return true;
     });
+
     if (newOnly.length > 0) {
       await Promise.all(newOnly.map((tx) =>
-        addDoc(collection(db, txCollectionPath()), { ...tx, createdAt: serverTimestamp() }),
+        addDoc(collection(db, txCollectionPath()), {
+          ...tx,
+          originalDescription: tx.description,
+          createdAt: serverTimestamp(),
+        }),
       ));
     }
     return { added: newOnly.length, skipped: list.length - newOnly.length };

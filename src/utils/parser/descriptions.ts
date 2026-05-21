@@ -21,8 +21,19 @@ export function buildBtDescription(raw: string, type: string): string {
   }
 
   if (/Plata la POS/i.test(raw)) {
+    // Handle "non-BT cu card VISA" format which has extra terminal/MID info before merchant
+    const nonBtMatch = raw.match(
+      /(?:EPOS|POS)\s+\d{2}\/\d{2}\/\d{4}\s+\S+\s+TID[:\s](\S+)\s+(.+?)\s+(?:RO|ROM)\s+\d/i,
+    );
+    if (nonBtMatch) return cleanMerchant(nonBtMatch[2] ?? '');
+
     const m = raw.match(/(?:EPOS|POS)\s+\S+\s+(?:TID[:\s]\S+\s+)?(.+?)\s+(?:RO|ROM)\s+\d/i);
     if (m) return cleanMerchant(m[1] ?? '');
+
+    // EPOS with MID format: "EPOS DD/MM/YYYY MID XXXRON MERCHANT CITY COUNTRY"
+    const eposMatch = raw.match(/EPOS\s+\S+\s+MID\s+\S+\s+(.+?)\s+(?:RO|ROM)\s/i);
+    if (eposMatch) return cleanMerchant(eposMatch[1] ?? '');
+
     const after = raw.replace(/Plata la POS(?:\s+non-BT cu card VISA)?/i, '').trim();
     const firstTech = after.search(/\b(POS|EPOS|TID|RRN|REF|comision|valoare)\b/i);
     if (firstTech > 0) return cleanMerchant(after.slice(0, firstTech));

@@ -101,11 +101,11 @@ export async function parseStatement(file: File): Promise<ParseResult> {
   console.log(`[Parser] bank=${bank}, found=${transactions.length}`);
 
   // Final deduplication
-  const seen = new Set<string>();
+  const seen = new Map<string, number>();
   transactions = transactions.filter((tx) => {
-    const key = `${tx.date}|${tx.amount}|${tx.description.slice(0, 20)}`;
+    const key = `${tx.date}|${tx.amount}|${tx.type}|${tx.description.slice(0, 30)}`;
     if (seen.has(key)) return false;
-    seen.add(key);
+    seen.set(key, 1);
     return true;
   });
 
