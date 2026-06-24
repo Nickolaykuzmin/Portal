@@ -73,13 +73,17 @@ export function groupByMonth(transactions: Transaction[]): Record<string, Transa
 }
 
 /**
- * Returns true if a transaction should be excluded from expense totals.
- * Neutral cash withdrawals are transfers, not real expenses.
- * Unprocessed cash withdrawals (no cashMode set) are also excluded until user decides.
+ * Returns true if a transaction should be excluded from expense/income totals.
+ * Covers:
+ * - Neutral cash withdrawals (isCashWithdrawal + cashMode 'neutral' or unprocessed)
+ * - Any regular transaction manually marked as neutral (cashMode: 'neutral')
  */
 export function isNeutralCash(tx: Transaction): boolean {
-  if (!tx.isCashWithdrawal) return false;
-  return tx.cashMode === 'neutral' || !tx.cashMode;
+  // Any transaction explicitly marked neutral
+  if (tx.cashMode === 'neutral') return true;
+  // Unprocessed ATM withdrawals (not yet categorized by user)
+  if (tx.isCashWithdrawal && !tx.cashMode) return true;
+  return false;
 }
 
 /**
