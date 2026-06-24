@@ -11,6 +11,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'entertainment', name: 'Розваги',             icon: 'movie',           color: '#db2777', type: 'expense', isDefault: true },
   { id: 'travel',        name: 'Подорожі',            icon: 'flight',          color: '#0891b2', type: 'expense', isDefault: true },
   { id: 'education',     name: 'Освіта',              icon: 'school',          color: '#059669', type: 'expense', isDefault: true },
+  { id: 'apartment',     name: 'Квартира',            icon: 'home',            color: '#0d9488', type: 'expense', isDefault: true },
   { id: 'cash',          name: 'Готівка',             icon: 'payments',        color: '#64748b', type: 'expense', isDefault: true },
   { id: 'taxes',         name: 'Податки',             icon: 'account_balance', color: '#b45309', type: 'expense', isDefault: true },
   { id: 'dividends',     name: 'Дивіденди',           icon: 'savings',         color: '#7c3aed', type: 'expense', isDefault: true },
