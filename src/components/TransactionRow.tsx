@@ -43,7 +43,7 @@ export default function TransactionRow({ transaction, onEdit, onDelete }: Transa
 
   const catBg = (category.color || '#737686') + '15';
 
-  const isNeutral = transaction.isCashWithdrawal && transaction.cashMode === 'neutral';
+  const isNeutral = transaction.cashMode === 'neutral';
   const isUnprocessed = transaction.isCashWithdrawal && !transaction.cashMode;
 
   return (

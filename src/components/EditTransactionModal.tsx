@@ -64,7 +64,7 @@ export default function EditTransactionModal({ transaction, onSave, onSplit, onC
       category: form.cashMode === 'neutral' ? '' : form.category,
       currency: form.currency,
       isCashWithdrawal: transaction?.isCashWithdrawal,
-      cashMode: isAtm ? form.cashMode : undefined,
+      cashMode: form.cashMode === 'neutral' ? 'neutral' : (isAtm ? form.cashMode : undefined),
     });
   };
 
@@ -137,6 +137,23 @@ export default function EditTransactionModal({ transaction, onSave, onSplit, onC
               </div>
             )}
 
+            {/* Neutral toggle — available for all non-ATM transactions */}
+            {!isAtm && (
+              <div className={s.field}>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, cashMode: f.cashMode === 'neutral' ? 'expense' : 'neutral' }))}
+                  className={`${s.neutralToggle} ${form.cashMode === 'neutral' ? s.active : ''}`}
+                >
+                  <span className={`material-symbols-outlined ${s.icon}`}>
+                    {form.cashMode === 'neutral' ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                  Нейтральна транзакція
+                  <span className={s.neutralToggleHint}>не враховується у витратах/доходах</span>
+                </button>
+              </div>
+            )}
+
             <div className={s.field}>
               <label className={s.label}>Опис</label>
               <input
@@ -187,8 +204,8 @@ export default function EditTransactionModal({ transaction, onSave, onSplit, onC
               />
             </div>
 
-            {/* Category — hidden for neutral ATM */}
-            {(!isAtm || form.cashMode === 'expense') && (
+            {/* Category — hidden for neutral ATM or neutral regular */}
+            {form.cashMode !== 'neutral' && (!isAtm || form.cashMode === 'expense') && (
               <div className={s.field}>
                 <label className={s.label}>Категорія</label>
                 <select
@@ -204,9 +221,9 @@ export default function EditTransactionModal({ transaction, onSave, onSplit, onC
             )}
 
             {/* Neutral hint */}
-            {isAtm && form.cashMode === 'neutral' && (
+            {form.cashMode === 'neutral' && (
               <p className={s.neutralHint}>
-                Транзакція буде збережена як переміщення коштів і не враховуватиметься у витратах.
+                Транзакція буде збережена як нейтральна і не враховуватиметься у витратах або доходах.
               </p>
             )}
 
