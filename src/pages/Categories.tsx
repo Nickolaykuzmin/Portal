@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBudgetAlerts } from '../hooks/useBudgetAlerts';
-import NotificationSettings from '../components/NotificationSettings';
 import TopBar from '../components/TopBar';
 import type { Category, TransactionType } from '../types';
 import { formatCurrency } from '../utils/formatters';
@@ -105,11 +104,6 @@ export default function Categories({ onMenuClick }: CategoriesProps) {
     <>
       <TopBar title="Категорії" onMenuClick={onMenuClick} />
       <div className={s.page}>
-
-        {/* Notification settings */}
-        <div className={s.notifWrap}>
-          <NotificationSettings />
-        </div>
 
         {/* Header */}
         <div className={s.pageHeader}>

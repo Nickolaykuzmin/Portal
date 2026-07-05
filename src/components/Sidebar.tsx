@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import {
+  getNotifPermission,
+  requestNotifPermission,
+  registerFCMToken,
+} from '../services/notifications';
 import s from './Sidebar.module.scss';
 
 interface NavItem {
@@ -26,6 +31,19 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, accounts, activeAccount, setActiveAccount, logout } = useAuth();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(() => getNotifPermission());
+  const [notifLoading, setNotifLoading] = useState(false);
+
+  const handleNotifToggle = async () => {
+    if (notifPermission === 'granted' || notifPermission === 'denied' || notifPermission === 'unavailable') return;
+    setNotifLoading(true);
+    const result = await requestNotifPermission();
+    setNotifPermission(result);
+    if (result === 'granted' && user) {
+      await registerFCMToken(user.uid);
+    }
+    setNotifLoading(false);
+  };
 
   const handleAccountSwitch = (accountId: string) => {
     const account = accounts.find((a) => a.id === accountId);
@@ -136,6 +154,36 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Footer — user info + logout */}
         <div className={s.footer}>
+
+          {/* Notification toggle */}
+          {'Notification' in window && (
+            <button
+              className={`${s.notifBtn} ${notifPermission === 'granted' ? s.granted : notifPermission === 'denied' ? s.denied : ''}`}
+              onClick={handleNotifToggle}
+              disabled={notifPermission === 'granted' || notifPermission === 'denied' || notifLoading}
+              title={
+                notifPermission === 'granted' ? 'Сповіщення увімкнено'
+                : notifPermission === 'denied'  ? 'Заблоковано у налаштуваннях браузера'
+                : 'Увімкнути push-сповіщення'
+              }
+            >
+              <span className={`material-symbols-outlined ${s.notifIcon}`}>
+                {notifLoading         ? 'hourglass_top'
+                : notifPermission === 'granted' ? 'notifications_active'
+                : notifPermission === 'denied'  ? 'notifications_off'
+                :                                 'notifications'}
+              </span>
+              <span className={s.notifLabel}>
+                {notifPermission === 'granted' ? 'Сповіщення увімкнено'
+                : notifPermission === 'denied'  ? 'Сповіщення заблоковано'
+                :                                 'Увімкнути сповіщення'}
+              </span>
+              {notifPermission === 'default' && (
+                <span className={s.notifBadge}>NEW</span>
+              )}
+            </button>
+          )}
+
           <div className={s.footerCard}>
             {user?.photoURL ? (
               <img
