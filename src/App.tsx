@@ -9,6 +9,7 @@ import Analytics from './pages/Analytics';
 import Taxes from './pages/Taxes';
 import Debug from './pages/Debug';
 import Login from './pages/Login';
+import InstallPWABanner from './components/InstallPWABanner';
 import { useAuth } from './hooks/useAuth';
 
 // ─── Auth guard ───────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ function AuthenticatedApp() {
           <Route path="*"             element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <InstallPWABanner />
     </div>
   );
 }

@@ -5,9 +5,11 @@ import {
 } from 'recharts';
 import { useTransactions } from '../hooks/useTransactions';
 import { useCategories } from '../hooks/useCategories';
+import { useBudgetAlerts } from '../hooks/useBudgetAlerts';
 import { formatCurrency, calcTotals, groupByMonth, groupByCategory, isNeutralCash } from '../utils/formatters';
 import { resolveCategory } from '../utils/categoryHelpers';
 import TopBar from '../components/TopBar';
+import BudgetAlertsWidget from '../components/BudgetAlertsWidget';
 import s from './Analytics.module.scss';
 
 interface PeriodOption {
@@ -173,6 +175,7 @@ function useMonthlySavings(transactions: ReturnType<typeof useTransactions>['tra
 export default function Analytics({ onMenuClick }: AnalyticsProps) {
   const { transactions } = useTransactions();
   const { categories } = useCategories();
+  const budgetAlerts = useBudgetAlerts(transactions, categories);
   const [period, setPeriod] = useState('month');
 
   const filtered = useMemo(() => {
@@ -279,6 +282,9 @@ export default function Analytics({ onMenuClick }: AnalyticsProps) {
 
         {/* Monthly savings widget */}
         <SavingsWidget data={savings} />
+
+        {/* Budget limits widget */}
+        <BudgetAlertsWidget alerts={budgetAlerts} />
 
         {/* Area chart */}
         <div className={s.areaCard}>

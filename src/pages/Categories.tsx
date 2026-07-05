@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useCategories } from '../hooks/useCategories';
+import { useTransactions } from '../hooks/useTransactions';
+import { useBudgetAlerts } from '../hooks/useBudgetAlerts';
+import NotificationSettings from '../components/NotificationSettings';
 import TopBar from '../components/TopBar';
 import type { Category, TransactionType } from '../types';
+import { formatCurrency } from '../utils/formatters';
 import s from './Categories.module.scss';
 
 const ICONS: string[] = [
@@ -22,9 +26,10 @@ interface CategoryForm {
   icon: string;
   color: string;
   type: TransactionType;
+  budgetLimit: string; // string for controlled input, convert to number on save
 }
 
-const EMPTY_FORM: CategoryForm = { name: '', icon: 'category', color: '#004ac6', type: 'expense' };
+const EMPTY_FORM: CategoryForm = { name: '', icon: 'category', color: '#004ac6', type: 'expense', budgetLimit: '' };
 
 interface CategoriesProps {
   onMenuClick?: () => void;
@@ -32,6 +37,8 @@ interface CategoriesProps {
 
 export default function Categories({ onMenuClick }: CategoriesProps) {
   const { categories, loading, addCategory, updateCategory, deleteCategory } = useCategories();
+  const { transactions } = useTransactions();
+  const budgetAlerts = useBudgetAlerts(transactions, categories);
   const [editCat, setEditCat] = useState<Category | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CategoryForm>(EMPTY_FORM);
@@ -43,7 +50,13 @@ export default function Categories({ onMenuClick }: CategoriesProps) {
 
   const handleEdit = (cat: Category) => {
     setEditCat(cat);
-    setForm({ name: cat.name, icon: cat.icon, color: cat.color, type: cat.type });
+    setForm({
+      name: cat.name,
+      icon: cat.icon,
+      color: cat.color,
+      type: cat.type,
+      budgetLimit: cat.budgetLimit != null ? String(cat.budgetLimit) : '',
+    });
     setShowForm(true);
   };
 
@@ -55,10 +68,24 @@ export default function Categories({ onMenuClick }: CategoriesProps) {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const limit = form.budgetLimit.trim() !== '' ? parseFloat(form.budgetLimit) : undefined;
+    const validLimit = limit != null && !isNaN(limit) && limit > 0 ? limit : undefined;
+
     if (editCat?.id) {
-      await updateCategory(editCat.id, form);
+      await updateCategory(editCat.id, {
+        name: form.name,
+        icon: form.icon,
+        color: form.color,
+        type: form.type,
+        // Pass undefined to remove the field, or a number to set it
+        ...(validLimit != null ? { budgetLimit: validLimit } : { budgetLimit: undefined }),
+      });
     } else {
-      await addCategory(form);
+      // addCategory creates the doc; then we update with budgetLimit if provided
+      const docRef = await addCategory({ name: form.name, icon: form.icon, color: form.color, type: form.type }) as { id: string };
+      if (validLimit != null && docRef?.id) {
+        await updateCategory(docRef.id, { budgetLimit: validLimit });
+      }
     }
     setShowForm(false);
     setEditCat(null);
@@ -78,6 +105,11 @@ export default function Categories({ onMenuClick }: CategoriesProps) {
     <>
       <TopBar title="Категорії" onMenuClick={onMenuClick} />
       <div className={s.page}>
+
+        {/* Notification settings */}
+        <div className={s.notifWrap}>
+          <NotificationSettings />
+        </div>
 
         {/* Header */}
         <div className={s.pageHeader}>
@@ -103,42 +135,77 @@ export default function Categories({ onMenuClick }: CategoriesProps) {
           <p className={s.loading}>Завантаження...</p>
         ) : (
           <div className={s.grid}>
-            {filtered.map((cat) => (
-              <div key={cat.id} className={`whisper-shadow ${s.catCard}`}>
-                <div className={s.catCardTop}>
-                  <div
-                    className={s.catIconWrap}
-                    style={{ background: cat.color + '20' }}
-                  >
-                    <span
-                      className={`material-symbols-outlined ${s.icon}`}
-                      style={{ color: cat.color }}
+            {filtered.map((cat) => {
+              const alert = budgetAlerts.find((a) => a.categoryId === cat.id);
+              const barPct = alert ? Math.min(alert.ratio * 100, 100) : 0;
+              const barClass = alert?.exceeded ? s.budgetExceeded : alert?.warning ? s.budgetWarning : s.budgetOk;
+
+              return (
+                <div key={cat.id} className={`whisper-shadow ${s.catCard}`}>
+                  <div className={s.catCardTop}>
+                    <div
+                      className={s.catIconWrap}
+                      style={{ background: cat.color + '20' }}
                     >
-                      {cat.icon}
-                    </span>
-                  </div>
-                  <div className={s.catCardActions}>
-                    <button onClick={() => handleEdit(cat)} className={s.editBtn}>
-                      <span className={`material-symbols-outlined ${s.icon}`}>edit</span>
-                    </button>
-                    {!cat.isDefault && (
-                      <button onClick={() => handleDelete(cat)} className={s.deleteBtn}>
-                        <span className={`material-symbols-outlined ${s.icon}`}>delete</span>
+                      <span
+                        className={`material-symbols-outlined ${s.icon}`}
+                        style={{ color: cat.color }}
+                      >
+                        {cat.icon}
+                      </span>
+                    </div>
+                    <div className={s.catCardActions}>
+                      <button onClick={() => handleEdit(cat)} className={s.editBtn}>
+                        <span className={`material-symbols-outlined ${s.icon}`}>edit</span>
                       </button>
-                    )}
+                      {!cat.isDefault && (
+                        <button onClick={() => handleDelete(cat)} className={s.deleteBtn}>
+                          <span className={`material-symbols-outlined ${s.icon}`}>delete</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className={s.catName}>{cat.name}</div>
-                  <div className={s.catMeta}>
-                    <span className={`${s.typeBadge} ${cat.type === 'income' ? s.income : s.expense}`}>
-                      {cat.type === 'income' ? 'Дохід' : 'Витрата'}
-                    </span>
-                    {cat.isDefault && <span className={s.defaultLabel}>стандартна</span>}
+                  <div>
+                    <div className={s.catName}>{cat.name}</div>
+                    <div className={s.catMeta}>
+                      <span className={`${s.typeBadge} ${cat.type === 'income' ? s.income : s.expense}`}>
+                        {cat.type === 'income' ? 'Дохід' : 'Витрата'}
+                      </span>
+                      {cat.isDefault && <span className={s.defaultLabel}>стандартна</span>}
+                    </div>
                   </div>
+
+                  {/* Budget progress (only for expense categories with a limit) */}
+                  {cat.budgetLimit && cat.type === 'expense' && alert && (
+                    <div className={s.budgetWrap}>
+                      <div className={s.budgetHeader}>
+                        <span className={s.budgetLabel}>Ліміт</span>
+                        <span className={`${s.budgetPct} ${barClass}`}>
+                          {formatCurrency(alert.spent)} / {formatCurrency(cat.budgetLimit)}
+                        </span>
+                      </div>
+                      <div className={s.budgetTrack}>
+                        <div
+                          className={`${s.budgetFill} ${barClass}`}
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {cat.budgetLimit && cat.type === 'expense' && !alert && (
+                    <div className={s.budgetWrap}>
+                      <div className={s.budgetHeader}>
+                        <span className={s.budgetLabel}>Ліміт</span>
+                        <span className={s.budgetLabel}>{formatCurrency(cat.budgetLimit)}</span>
+                      </div>
+                      <div className={s.budgetTrack}>
+                        <div className={`${s.budgetFill} ${s.budgetOk}`} style={{ width: '0%' }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -203,6 +270,30 @@ export default function Categories({ onMenuClick }: CategoriesProps) {
                   ))}
                 </div>
               </div>
+
+              {/* Budget limit — only for expense categories */}
+              {form.type === 'expense' && (
+                <div>
+                  <label className={s.fieldLabel}>Місячний ліміт (необов'язково)</label>
+                  <div className={s.budgetInputWrap}>
+                    <input
+                      className={s.input}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.budgetLimit}
+                      onChange={(e) => setForm((f) => ({ ...f, budgetLimit: e.target.value }))}
+                      placeholder="напр. 3000"
+                    />
+                    <span className={s.budgetCurrency}>RON</span>
+                  </div>
+                  {form.budgetLimit && parseFloat(form.budgetLimit) > 0 && (
+                    <p className={s.budgetHint}>
+                      Отримаєш сповіщення при 80% та 100% використання
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className={s.fieldLabel}>Іконка</label>

@@ -3,6 +3,7 @@ import './index.css';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
+import { ToastProvider } from './context/ToastContext';
 
 // StrictMode is intentionally omitted — it double-mounts components which
 // causes Firestore's internal watch-stream state machine to assert.
@@ -11,8 +12,10 @@ if (!rootEl) throw new Error('Root element not found');
 
 createRoot(rootEl).render(
   <AuthProvider>
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </ToastProvider>
   </AuthProvider>,
 );

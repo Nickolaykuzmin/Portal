@@ -1,4 +1,5 @@
 import { createContext, useEffect, useRef, useState, useCallback, useContext } from 'react';
+import type { ReactNode } from 'react';
 import {
   collection,
   addDoc,
@@ -14,6 +15,7 @@ import {
 import { db } from '../firebase';
 import { DEFAULT_CATEGORIES } from '../utils/defaultCategories';
 import { AuthContext } from './AuthContext';
+import { useBudgetNotifications } from '../hooks/useBudgetNotifications';
 import type { Transaction, Category, NewTransaction, NewCategory, MergeResult, Currency } from '../types';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
@@ -47,7 +49,7 @@ const FALLBACK_RON_TO_EUR = 0.201;
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { children: ReactNode }) {
   const authCtx = useContext(AuthContext);
   const user          = authCtx?.user ?? null;
   const activeAccount = authCtx?.activeAccount;
@@ -271,9 +273,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateCategory,
       deleteCategory,
     }}>
+      <BudgetNotificationsRunner
+        transactions={transactions}
+        categories={categories}
+      />
       {children}
     </AppContext.Provider>
   );
+}
+
+// ─── Budget alerts runner ─────────────────────────────────────────────────────
+// Isolated component so it can safely call the budget notification hook
+// (hooks must be called unconditionally, this avoids conditional hook calls in Provider)
+
+function BudgetNotificationsRunner({
+  transactions,
+  categories,
+}: {
+  transactions: Transaction[];
+  categories: Category[];
+}) {
+  useBudgetNotifications(transactions, categories);
+  return null;
 }
 
 export { AppContext };

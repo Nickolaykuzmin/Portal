@@ -42,6 +42,8 @@ export interface Category {
   color: string;
   type: TransactionType;
   isDefault?: boolean;
+  /** Monthly budget limit in the user's display currency (optional) */
+  budgetLimit?: number;
   createdAt?: unknown;
 }
 

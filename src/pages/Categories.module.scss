@@ -334,3 +334,77 @@
   font-size: 14px;
   cursor: pointer;
 }
+
+// ── Notification settings strip ───────────────────────────────────────────────
+.notifWrap {
+  margin-bottom: 20px;
+}
+
+// ── Budget progress on category card ─────────────────────────────────────────
+.budgetWrap {
+  margin-top: 4px;
+}
+
+.budgetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.budgetLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+.budgetPct {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.budgetTrack {
+  height: 4px;
+  background: var(--surface-container);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.budgetFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.budgetOk      { &.budgetFill { background: var(--secondary); } &.budgetPct { color: var(--secondary); } }
+.budgetWarning { &.budgetFill { background: #d97706; } &.budgetPct { color: #d97706; } }
+.budgetExceeded { &.budgetFill { background: var(--tertiary); } &.budgetPct { color: var(--tertiary); } }
+
+// ── Budget limit input in form ────────────────────────────────────────────────
+.budgetInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .input {
+    padding-right: 50px;
+  }
+}
+
+.budgetCurrency {
+  position: absolute;
+  right: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--outline);
+  pointer-events: none;
+}
+
+.budgetHint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  line-height: 1.4;
+}
