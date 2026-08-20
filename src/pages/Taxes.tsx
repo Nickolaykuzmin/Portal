@@ -12,20 +12,21 @@ import type { Currency, Transaction } from '../types';
 import s from './Taxes.module.scss';
 
 // ── Romanian SRL Micro-enterprise tax constants (2026) ────────────────────────
-// Based on real payslip: NICKONIX TECH S.R.L., salariu de bază = 4,050 RON
+// Minimum gross salary from 1 July 2026 (HG 146/2026): 4,325 RON
 //
-// Monthly salary obligations (fixed, from minimum wage 4,050 RON):
-//   CAS  (pension)       = 25%  × 4,050 = 1,013 RON
-//   CASS (health)        = 10%  × 4,050 =   405 RON
-//   Impozit pe venit     ≈ 10%  × (4,050 - 1,013 - 405 - 0) = 263 RON
-//   CAM  (employer)      = 2.25% × 4,050 =  91 RON
+// Monthly salary obligations (fixed, from minimum wage 4,325 RON):
+//   CAS  (pension)       = 25%  × 4,325 = 1,081 RON
+//   CASS (health)        = 10%  × 4,325 =   433 RON
+//   Impozit pe venit     ≈ 10%  × (4,325 - 1,081 - 433) = 281 RON
+//   CAM  (employer)      = 2.25% × 4,325 =  97 RON
 //   ─────────────────────────────────────────────────
-//   Total salary taxes/month             = 1,772 RON
+//   Total salary taxes/month             = 1,892 RON
 //
 // Micro-enterprise tax = 1% of turnover (revenue)
 // Dividend tax         = 16% (since 2025 fiscal code update)
 
-const SALARY_BASE = 4_050;
+const SALARY_BASE = 4_325;
+const SALARY_BASE_EFFECTIVE_DATE = '01.07.2026';
 const CAS_RATE = 0.25;
 const CASS_RATE = 0.10;
 const INCOME_TAX_RATE = 0.10;
@@ -253,7 +254,7 @@ export default function Taxes({ onMenuClick }: TaxesProps) {
         <div className={s.infoBar}>
           <span className={`material-symbols-outlined ${s.infoIcon}`}>info</span>
           <span>
-            Мікро SRL: 1% обороту + ЗП {SALARY_BASE} RON (CAS 25% + CASS 10% + IRPF 10% + CAM 2.25%) + дивіденди 16%
+            Мікро SRL: 1% обороту + ЗП {SALARY_BASE} RON з {SALARY_BASE_EFFECTIVE_DATE} (CAS 25% + CASS 10% + IRPF 10% + CAM 2.25%) + дивіденди 16%
           </span>
         </div>
 
